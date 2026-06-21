@@ -37,8 +37,12 @@
     .schedule { padding:28px; }
     .panel-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
     .panel-head h2, .side h2 { margin:0; font-size:18px; letter-spacing:-.02em; }
+    .head-actions { display:flex; gap:8px; align-items:center; }
     .add { border:0; background:var(--ink); color:#fff; border-radius:999px; padding:10px 15px; font-weight:700; cursor:pointer; transition:.2s; }
     .add:hover { transform:translateY(-2px); background:var(--green); }
+    .float-btn { border:1px solid var(--line); background:#fff; color:var(--green); border-radius:999px; padding:9px 13px; font-weight:700; cursor:pointer; transition:.2s; }
+    .float-btn:hover { border-color:var(--green); transform:translateY(-2px); }
+    .float-btn.active { background:var(--lime); border-color:var(--lime); color:#34401d; }
     .timeline { display:flex; flex-direction:column; }
     .task { display:grid; grid-template-columns:62px 22px 1fr auto; gap:14px; align-items:start; padding:19px 4px; border-top:1px solid var(--line); animation:enter .42s both; }
     .time { font-size:13px; color:var(--muted); padding-top:4px; font-variant-numeric:tabular-nums; }
@@ -83,7 +87,7 @@
     .ghost { border:1px solid var(--line); background:transparent; border-radius:999px; padding:10px 16px; cursor:pointer; }
     @keyframes enter { from { opacity:0; transform:translateY(8px); } }
     @media (max-width:780px) { .shell{width:min(100% - 24px,680px);padding-top:28px} header{display:block}.quote{width:auto;margin:24px 0 0}.layout{grid-template-columns:1fr}.task{grid-template-columns:50px 22px 1fr}.tag{display:none}.schedule{padding:22px}.side{display:grid;grid-template-columns:1fr 1fr}.focus-card strong{font-size:22px} }
-    @media (max-width:520px) { .side{grid-template-columns:1fr} h1{font-size:48px}.quote{display:none} }
+    @media (max-width:520px) { .side{grid-template-columns:1fr} h1{font-size:48px}.quote{display:none}.panel-head{align-items:flex-start;gap:14px}.head-actions{flex-direction:column;align-items:stretch}.head-actions button{white-space:nowrap} }
   </style>
 </head>
 <body>
@@ -99,7 +103,7 @@
 
     <section class="layout">
       <div class="panel schedule">
-        <div class="panel-head"><h2>时间安排</h2><button class="add" id="openDialog">＋ 添加任务</button></div>
+        <div class="panel-head"><h2>时间安排</h2><div class="head-actions"><button class="float-btn" id="openPip">◱ 悬浮提醒</button><button class="add" id="openDialog">＋ 添加任务</button></div></div>
         <div class="timeline" id="timeline"></div>
       </div>
       <aside class="side">
@@ -143,6 +147,7 @@
     let tasks = JSON.parse(localStorage.getItem(key) || 'null') || seed.map((t,i)=>({...t,id:Date.now()+i,done:false}));
     const timeline = document.getElementById('timeline');
     const labels = {专注:'focus',会议:'meeting'};
+    let pipWindow=null;
     const esc = value => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
     function save(){ localStorage.setItem(key, JSON.stringify(tasks)); }
     function render(){
@@ -158,9 +163,47 @@
       document.getElementById('ring').style.setProperty('--progress',pct+'%');
       document.querySelectorAll('.check').forEach(c=>c.addEventListener('change',e=>{ const id=Number(e.target.closest('.task').dataset.id); tasks.find(t=>t.id===id).done=e.target.checked; save(); render(); }));
       document.querySelectorAll('.delete').forEach(btn=>btn.addEventListener('click',e=>{ const id=Number(e.target.closest('.task').dataset.id), task=tasks.find(t=>t.id===id); if(confirm(`确定删除“${task.title}”吗？`)){ tasks=tasks.filter(t=>t.id!==id); save(); render(); } }));
+      updatePip();
+    }
+    function taskMoment(task){ const [hour,minute]=task.time.split(':').map(Number), moment=new Date(); moment.setHours(hour,minute,0,0); return moment; }
+    function nextTask(){
+      const pending=tasks.filter(t=>!t.done).sort((a,b)=>a.time.localeCompare(b.time));
+      return pending.find(t=>taskMoment(t)>=new Date()) || pending[0] || null;
+    }
+    function countdown(task){
+      if(!task) return '今天的事项全部完成';
+      const diff=taskMoment(task)-new Date();
+      if(diff<=0) return '已到时间';
+      const total=Math.ceil(diff/60000), hours=Math.floor(total/60), mins=total%60;
+      return hours ? `${hours} 小时 ${mins} 分钟后` : `${mins} 分钟后`;
+    }
+    function updatePip(){
+      if(!pipWindow || pipWindow.closed) return;
+      const task=nextTask(), doc=pipWindow.document;
+      doc.getElementById('pipTime').textContent=task ? task.time : '完成';
+      doc.getElementById('pipTitle').textContent=task ? task.title : '今天辛苦了';
+      doc.getElementById('pipCountdown').textContent=countdown(task);
+      const done=doc.getElementById('pipDone'); done.hidden=!task; done.onclick=()=>{ task.done=true; save(); render(); };
+    }
+    async function openFloatingReminder(){
+      if(!('documentPictureInPicture' in window)){ alert('当前浏览器暂不支持悬浮提醒，请使用最新版 Chrome 或 Edge。'); return; }
+      if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+      if(pipWindow && !pipWindow.closed){ pipWindow.focus(); return; }
+      pipWindow=await documentPictureInPicture.requestWindow({width:360,height:230});
+      pipWindow.document.head.innerHTML=`<meta charset="UTF-8"><title>悬浮提醒</title><style>*{box-sizing:border-box}body{margin:0;padding:22px;background:#17231d;color:#fff;font-family:Inter,"Microsoft YaHei",sans-serif;display:flex;min-height:100vh;align-items:center}.card{width:100%}.label{color:#a7b9ae;font-size:11px;letter-spacing:.13em;text-transform:uppercase}.top{display:flex;justify-content:space-between;align-items:center;margin:13px 0 9px}.time{font:28px Georgia,serif;color:#dceb82}.count{color:#a7b9ae;font-size:12px}.title{font-size:21px;font-weight:750;line-height:1.35;margin:0 0 18px}.done{border:0;border-radius:999px;background:#dceb82;color:#26361c;padding:9px 14px;font-weight:750;cursor:pointer}</style>`;
+      pipWindow.document.body.innerHTML='<div class="card"><div class="label">Next up · 下一项</div><div class="top"><span class="time" id="pipTime"></span><span class="count" id="pipCountdown"></span></div><div class="title" id="pipTitle"></div><button class="done" id="pipDone">✓ 标记完成</button></div>';
+      openPip.classList.add('active'); openPip.textContent='◱ 悬浮已开启';
+      pipWindow.addEventListener('pagehide',()=>{ pipWindow=null; openPip.classList.remove('active'); openPip.textContent='◱ 悬浮提醒'; });
+      updatePip();
+    }
+    function checkDueNotifications(){
+      const now=new Date(), today=`${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`, sentKey='daily-plan-notified-v1', sent=JSON.parse(localStorage.getItem(sentKey)||'[]');
+      tasks.filter(t=>!t.done).forEach(t=>{ const due=taskMoment(t), id=`${today}-${t.id}`; if(Math.abs(now-due)<60000 && !sent.includes(id)){ if('Notification' in window && Notification.permission==='granted') new Notification('日程提醒',{body:`${t.time} · ${t.title}`}); sent.push(id); } });
+      localStorage.setItem(sentKey,JSON.stringify(sent.slice(-100)));
     }
     const now = new Date();
     document.getElementById('today').textContent = new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'}).format(now);
+    document.getElementById('openPip').onclick=openFloatingReminder;
     const focusKey='daily-plan-focus-v1', focusDefault={title:'完成核心方案，并交付可评审版本',note:'上午保持专注，先推进最需要深度思考的部分。'};
     const focus=JSON.parse(localStorage.getItem(focusKey)||'null')||focusDefault;
     focusTitle.textContent=focus.title; focusNote.textContent=focus.note;
@@ -169,6 +212,9 @@
     document.getElementById('openDialog').onclick=()=>dialog.showModal();
     document.getElementById('cancelDialog').onclick=()=>dialog.close();
     document.getElementById('taskForm').onsubmit=e=>{e.preventDefault(); tasks.push({id:Date.now(),time:taskTime.value,title:taskTitle.value.trim(),note:taskNote.value.trim(),type:taskType.value,done:false}); save(); render(); e.target.reset(); dialog.close();};
+    setInterval(updatePip,1000);
+    setInterval(checkDueNotifications,15000);
+    checkDueNotifications();
     render();
   </script>
 </body>
