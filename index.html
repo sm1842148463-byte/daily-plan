@@ -49,15 +49,22 @@
     .task-note { color:var(--muted); font-size:13px; line-height:1.5; }
     .task.done .task-title { color:#9ba49e; text-decoration:line-through; }
     .task.done .task-note { opacity:.5; }
+    .task-actions { display:flex; align-items:center; gap:7px; }
     .tag { font-size:11px; border-radius:999px; padding:6px 9px; background:#eef0eb; color:#6c776f; white-space:nowrap; }
     .tag.focus { background:var(--lime); color:#34401d; }
     .tag.meeting { background:#f7ded4; color:#8e4731; }
+    .delete { width:28px; height:28px; border:0; border-radius:50%; background:transparent; color:#9aa39d; cursor:pointer; font-size:17px; line-height:1; transition:.2s; }
+    .delete:hover { color:#a53e2c; background:#f7ded4; transform:rotate(6deg); }
     .side { display:flex; flex-direction:column; gap:22px; }
     .focus-card { background:var(--green); color:#fff; padding:28px; overflow:hidden; position:relative; }
-    .focus-card::after { content:""; position:absolute; width:150px; height:150px; border:35px solid rgba(220,235,130,.12); border-radius:50%; right:-65px; bottom:-65px; }
+    .focus-card::after { content:""; position:absolute; width:150px; height:150px; border:35px solid rgba(220,235,130,.12); border-radius:50%; right:-65px; bottom:-65px; pointer-events:none; }
     .focus-card h2 { color:#dce5df; font-size:13px; letter-spacing:.12em; text-transform:uppercase; }
     .focus-card strong { display:block; max-width:230px; margin-top:20px; font-family:Georgia,"Songti SC",serif; font-size:27px; line-height:1.3; font-weight:500; }
     .focus-card p { color:#bdcec4; font-size:13px; line-height:1.6; margin:14px 0 0; }
+    .editable { position:relative; z-index:1; border-radius:7px; outline:1px solid transparent; transition:.2s; cursor:text; }
+    .editable:hover { outline-color:rgba(255,255,255,.28); }
+    .editable:focus { outline:2px solid var(--lime); outline-offset:4px; }
+    .edit-hint { display:block; position:relative; z-index:1; margin-top:19px; color:#91aa9b; font-size:10px; letter-spacing:.08em; }
     .progress-card { padding:28px; }
     .progress-ring { width:138px; height:138px; margin:24px auto 18px; border-radius:50%; display:grid; place-items:center; background:conic-gradient(var(--orange) var(--progress), #e8e8e1 0); position:relative; }
     .progress-ring::before { content:""; width:104px; height:104px; border-radius:50%; background:#fbfaf6; position:absolute; }
@@ -98,8 +105,9 @@
       <aside class="side">
         <section class="panel focus-card">
           <h2>今日最重要的事</h2>
-          <strong>完成核心方案，并交付可评审版本</strong>
-          <p>上午保持专注，先推进最需要深度思考的部分。</p>
+          <strong class="editable" id="focusTitle" contenteditable="true" role="textbox" aria-label="编辑今日最重要的事" spellcheck="false">完成核心方案，并交付可评审版本</strong>
+          <p class="editable" id="focusNote" contenteditable="true" role="textbox" aria-label="编辑重点说明" spellcheck="false">上午保持专注，先推进最需要深度思考的部分。</p>
+          <small class="edit-hint">点击文字即可编辑 · 自动保存</small>
         </section>
         <section class="panel progress-card">
           <h2>今日进度</h2>
@@ -135,22 +143,28 @@
     let tasks = JSON.parse(localStorage.getItem(key) || 'null') || seed.map((t,i)=>({...t,id:Date.now()+i,done:false}));
     const timeline = document.getElementById('timeline');
     const labels = {专注:'focus',会议:'meeting'};
+    const esc = value => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
     function save(){ localStorage.setItem(key, JSON.stringify(tasks)); }
     function render(){
       tasks.sort((a,b)=>a.time.localeCompare(b.time));
       timeline.innerHTML = tasks.map(t=>`<article class="task ${t.done?'done':''}" data-id="${t.id}">
         <time class="time">${t.time}</time><input class="check" type="checkbox" ${t.done?'checked':''} aria-label="完成 ${t.title}">
-        <div><h3 class="task-title">${t.title}</h3><div class="task-note">${t.note || '按计划推进这项工作'}</div></div>
-        <span class="tag ${labels[t.type]||''}">${t.type}</span></article>`).join('');
+        <div><h3 class="task-title">${esc(t.title)}</h3><div class="task-note">${esc(t.note || '按计划推进这项工作')}</div></div>
+        <div class="task-actions"><span class="tag ${labels[t.type]||''}">${esc(t.type)}</span><button class="delete" type="button" aria-label="删除 ${esc(t.title)}" title="删除事项">×</button></div></article>`).join('');
       const done = tasks.filter(t=>t.done).length, pct = tasks.length ? Math.round(done/tasks.length*100) : 0;
       document.getElementById('percent').textContent = pct+'%';
       document.getElementById('doneCount').textContent = done;
       document.getElementById('leftCount').textContent = tasks.length-done;
       document.getElementById('ring').style.setProperty('--progress',pct+'%');
       document.querySelectorAll('.check').forEach(c=>c.addEventListener('change',e=>{ const id=Number(e.target.closest('.task').dataset.id); tasks.find(t=>t.id===id).done=e.target.checked; save(); render(); }));
+      document.querySelectorAll('.delete').forEach(btn=>btn.addEventListener('click',e=>{ const id=Number(e.target.closest('.task').dataset.id), task=tasks.find(t=>t.id===id); if(confirm(`确定删除“${task.title}”吗？`)){ tasks=tasks.filter(t=>t.id!==id); save(); render(); } }));
     }
     const now = new Date();
     document.getElementById('today').textContent = new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'}).format(now);
+    const focusKey='daily-plan-focus-v1', focusDefault={title:'完成核心方案，并交付可评审版本',note:'上午保持专注，先推进最需要深度思考的部分。'};
+    const focus=JSON.parse(localStorage.getItem(focusKey)||'null')||focusDefault;
+    focusTitle.textContent=focus.title; focusNote.textContent=focus.note;
+    [focusTitle,focusNote].forEach(el=>el.addEventListener('blur',()=>{ const data={title:focusTitle.textContent.trim()||focusDefault.title,note:focusNote.textContent.trim()||focusDefault.note}; focusTitle.textContent=data.title; focusNote.textContent=data.note; localStorage.setItem(focusKey,JSON.stringify(data)); }));
     const dialog=document.getElementById('taskDialog');
     document.getElementById('openDialog').onclick=()=>dialog.showModal();
     document.getElementById('cancelDialog').onclick=()=>dialog.close();
