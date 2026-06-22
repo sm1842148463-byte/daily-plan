@@ -260,6 +260,12 @@
       document.querySelectorAll('.check').forEach(c=>c.addEventListener('change',e=>{ const id=Number(e.target.closest('.task').dataset.id); tasks.find(t=>t.id===id).done=e.target.checked; save(); render(); }));
       document.querySelectorAll('.delete').forEach(btn=>btn.addEventListener('click',e=>{ const id=Number(e.target.closest('.task').dataset.id), task=tasks.find(t=>t.id===id); if(confirm(`确定删除“${task.title}”吗？`)){ tasks=tasks.filter(t=>t.id!==id); save(); render(); } }));
       updatePip();
+      syncNativeReminders();
+    }
+    function syncNativeReminders(){
+      if(window.AndroidReminder && typeof window.AndroidReminder.syncTasks==='function'){
+        try{ window.AndroidReminder.syncTasks(JSON.stringify(tasks)); }catch(error){ console.warn('原生提醒同步失败',error); }
+      }
     }
     function taskMoment(task){ const [hour,minute]=task.time.split(':').map(Number), moment=new Date(); moment.setHours(hour,minute,0,0); return moment; }
     function nextTask(){

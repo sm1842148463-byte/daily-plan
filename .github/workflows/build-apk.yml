@@ -5,12 +5,14 @@ on:
   push:
     paths:
       - "android/**"
+      - "index.html"
       - ".github/workflows/build-apk.yml"
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
 
     steps:
@@ -28,37 +30,32 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Generate release signing certificate
+      - name: Download existing release certificate
+        uses: actions/download-artifact@v4
+        with:
+          name: daily-plan-release-v1.0.0
+          path: signing-source
+          github-token: ${{ github.token }}
+          repository: sm1842148463-byte/daily-plan
+          run-id: 27966880766
+
+      - name: Prepare existing release certificate
         working-directory: android
         shell: bash
         run: |
-          SIGNING_PASSWORD="$(openssl rand -hex 24)"
+          SIGNING_INFO="$(find "$GITHUB_WORKSPACE/signing-source" -name '签名信息-请妥善保管.txt' -print -quit)"
+          SIGNING_KEY="$(find "$GITHUB_WORKSPACE/signing-source" -name 'daily-plan-release.jks' -print -quit)"
+          test -n "$SIGNING_INFO" && test -n "$SIGNING_KEY"
+          SIGNING_PASSWORD="$(sed -n 's/^证书密码：//p' "$SIGNING_INFO" | head -n 1)"
+          test -n "$SIGNING_PASSWORD"
           echo "::add-mask::$SIGNING_PASSWORD"
-          keytool -genkeypair -v \
-            -keystore daily-plan-release.jks \
-            -alias dailyplan \
-            -keyalg RSA \
-            -keysize 4096 \
-            -validity 10000 \
-            -storepass "$SIGNING_PASSWORD" \
-            -keypass "$SIGNING_PASSWORD" \
-            -dname "CN=Daily Plan, OU=Mobile, O=Daily Plan, L=Shanghai, ST=Shanghai, C=CN"
+          cp "$SIGNING_KEY" daily-plan-release.jks
           echo "DAILY_PLAN_KEYSTORE=$GITHUB_WORKSPACE/android/daily-plan-release.jks" >> "$GITHUB_ENV"
           echo "DAILY_PLAN_STORE_PASSWORD=$SIGNING_PASSWORD" >> "$GITHUB_ENV"
           echo "DAILY_PLAN_KEY_PASSWORD=$SIGNING_PASSWORD" >> "$GITHUB_ENV"
           echo "DAILY_PLAN_KEY_ALIAS=dailyplan" >> "$GITHUB_ENV"
           mkdir -p "$GITHUB_WORKSPACE/release-output"
-          {
-            echo "今日工作安排 Android 正式版签名信息"
-            echo "================================="
-            echo "密钥别名：dailyplan"
-            echo "证书密码：$SIGNING_PASSWORD"
-            echo "应用包名：com.dailyplan.app"
-            echo "版本：1.0.0 (1)"
-            echo
-            echo "重要：以后发布新版本必须同时使用 daily-plan-release.jks 和本密码。"
-            echo "请至少保留两份离线备份，不要上传到公开网盘或代码仓库。"
-          } > "$GITHUB_WORKSPACE/release-output/签名信息-请妥善保管.txt"
+          cp "$SIGNING_INFO" "$GITHUB_WORKSPACE/release-output/签名信息-请妥善保管.txt"
 
       - name: Build signed release APK
         working-directory: android
@@ -67,13 +64,13 @@ jobs:
       - name: Package release files
         shell: bash
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk release-output/今日工作安排-v1.0.0.apk
+          cp android/app/build/outputs/apk/release/app-release.apk release-output/今日工作安排-v1.0.1.apk
           cp android/daily-plan-release.jks release-output/daily-plan-release.jks
-          sha256sum release-output/今日工作安排-v1.0.0.apk > release-output/SHA256.txt
+          sha256sum release-output/今日工作安排-v1.0.1.apk > release-output/SHA256.txt
 
       - name: Upload signed release package
         uses: actions/upload-artifact@v4
         with:
-          name: daily-plan-release-v1.0.0
+          name: daily-plan-release-v1.0.1
           path: release-output/*
           if-no-files-found: error
