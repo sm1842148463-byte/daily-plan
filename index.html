@@ -31,7 +31,14 @@
     .eyebrow::before { content:""; width:26px; height:2px; background:var(--green); }
     h1 { margin:12px 0 8px; font-family:Georgia,"Songti SC",serif; font-size:clamp(40px,6vw,76px); line-height:.96; letter-spacing:-.045em; font-weight:500; }
     .date { color:var(--muted); font-size:15px; }
-    .quote { width:min(330px,36vw); margin-top:14px; padding:18px 22px; border-left:1px solid var(--line); color:var(--muted); line-height:1.7; font-family:Georgia,"Songti SC",serif; font-style:italic; }
+    .header-side { width:min(360px,38vw); display:flex; flex-direction:column; align-items:flex-end; gap:14px; }
+    .quote { width:100%; margin-top:4px; padding:15px 20px; border-left:1px solid var(--line); color:var(--muted); line-height:1.7; font-family:Georgia,"Songti SC",serif; font-style:italic; }
+    .account { display:flex; align-items:center; gap:10px; padding:8px 9px 8px 14px; border:1px solid var(--line); border-radius:999px; background:rgba(255,255,255,.68); box-shadow:0 8px 24px rgba(36,48,40,.06); }
+    .account-status { max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font-size:12px; }
+    .account button { border:0; border-radius:999px; padding:8px 12px; background:var(--green); color:#fff; font-weight:700; cursor:pointer; }
+    .account button.ghost-account { border:1px solid var(--line); background:transparent; color:var(--green); }
+    .sync-dot { width:7px; height:7px; border-radius:50%; background:#a7afa9; }
+    .sync-dot.online { background:#62a776; box-shadow:0 0 0 4px rgba(98,167,118,.14); }
     .layout { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(280px,.8fr); gap:22px; }
     .panel { background:var(--card); border:1px solid rgba(255,255,255,.8); border-radius:26px; box-shadow:var(--shadow); backdrop-filter:blur(16px); }
     .schedule { padding:28px; }
@@ -97,8 +104,13 @@
     input:focus, select:focus { border-color:var(--green); }
     .form-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
     .ghost { border:1px solid var(--line); background:transparent; border-radius:999px; padding:10px 16px; cursor:pointer; }
+    .auth-copy { margin:-10px 0 18px; color:var(--muted); font-size:13px; line-height:1.6; }
+    .auth-message { min-height:20px; margin:12px 0 0; color:#a34f38; font-size:12px; line-height:1.5; }
+    .auth-message.ok { color:var(--green); }
+    .auth-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+    .auth-actions button { width:100%; }
     @keyframes enter { from { opacity:0; transform:translateY(8px); } }
-    @media (max-width:780px) { .shell{width:min(100% - 24px,680px);padding-top:28px} header{display:block}.quote{width:auto;margin:24px 0 0}.layout{grid-template-columns:1fr}.task{grid-template-columns:50px 22px 1fr}.tag{display:none}.schedule{padding:22px}.side{display:grid;grid-template-columns:1fr 1fr}.focus-card strong{font-size:22px}.notes-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+    @media (max-width:780px) { .shell{width:min(100% - 24px,680px);padding-top:28px} header{display:block}.header-side{width:auto;align-items:flex-start;margin-top:22px}.quote{display:none}.layout{grid-template-columns:1fr}.task{grid-template-columns:50px 22px 1fr}.tag{display:none}.schedule{padding:22px}.side{display:grid;grid-template-columns:1fr 1fr}.focus-card strong{font-size:22px}.notes-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
     @media (max-width:520px) { .side{grid-template-columns:1fr} h1{font-size:48px}.quote{display:none}.panel-head{align-items:flex-start;gap:14px}.head-actions{flex-direction:column;align-items:stretch}.head-actions button{white-space:nowrap}.notes-panel{padding:22px}.notes-grid{grid-template-columns:1fr} }
   </style>
 </head>
@@ -110,7 +122,10 @@
         <h1>今日工作安排</h1>
         <div class="date" id="today"></div>
       </div>
-      <div class="quote">把注意力放在真正重要的事情上，剩下的交给节奏。</div>
+      <div class="header-side">
+        <div class="account"><span class="sync-dot" id="syncDot"></span><span class="account-status" id="accountStatus">未登录 · 本机保存</span><button id="openAuth">登录 / 注册</button><button class="ghost-account" id="logout" hidden>退出</button></div>
+        <div class="quote">把注意力放在真正重要的事情上，剩下的交给节奏。</div>
+      </div>
     </header>
 
     <section class="layout">
@@ -133,7 +148,7 @@
       </aside>
     </section>
     <section class="panel notes-panel">
-      <div class="notes-head"><div><h2>随手便签</h2><p>想到什么就写下来，内容会自动保存在当前浏览器</p></div><button class="add" id="addNote">＋ 新建便签</button></div>
+      <div class="notes-head"><div><h2>随手便签</h2><p id="notesHint">想到什么就写下来，登录后可在不同电脑间同步</p></div><button class="add" id="addNote">＋ 新建便签</button></div>
       <div class="notes-grid" id="notesGrid"></div>
     </section>
   </main>
@@ -149,7 +164,23 @@
     </form>
   </dialog>
 
+  <dialog id="authDialog">
+    <form id="authForm">
+      <h3>登录或创建账号</h3>
+      <p class="auth-copy">使用邮箱和密码。登录后，任务、重点事项和便签会安全同步到你的账号。</p>
+      <label for="authEmail">邮箱</label><input id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" required>
+      <label for="authPassword">密码</label><input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="至少 6 位" required>
+      <div class="auth-message" id="authMessage" aria-live="polite"></div>
+      <div class="auth-actions"><button class="add" type="submit">登录</button><button class="ghost" type="button" id="register">注册新账号</button></div>
+      <div class="form-actions"><button type="button" class="ghost" id="cancelAuth">取消</button></div>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    const SUPABASE_URL='https://jeywkltcbcuckecgbqto.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY='sb_publishable_UH9dUtNMWylU4VPXeuy0lg_aQQ5NVY4';
+    const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
     const seed = [
       {time:'09:00', title:'梳理今日重点', note:'查看消息与待办，确定今天的三个关键产出', type:'常规'},
       {time:'09:30', title:'核心方案深度工作', note:'关闭通知，集中完成方案主体与关键细节', type:'专注'},
@@ -168,8 +199,22 @@
     const notesKey='daily-plan-notes-v1';
     let notes=JSON.parse(localStorage.getItem(notesKey)||'null')||[{id:Date.now(),text:''}];
     const esc = value => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-    function save(){ localStorage.setItem(key, JSON.stringify(tasks)); }
-    function saveNotes(){ localStorage.setItem(notesKey,JSON.stringify(notes)); }
+    let currentUser=null, syncTimer=null, hydrating=false;
+    function queueCloudSave(){
+      if(!currentUser || hydrating) return;
+      clearTimeout(syncTimer);
+      accountStatus.textContent='正在同步…';
+      syncTimer=setTimeout(saveToCloud,450);
+    }
+    async function saveToCloud(){
+      if(!currentUser) return;
+      const {error}=await supabaseClient.from('daily_plan_data').upsert({user_id:currentUser.id,tasks,notes,focus,updated_at:new Date().toISOString()});
+      accountStatus.textContent=error ? '同步失败，请稍后重试' : `${currentUser.email} · 已同步`;
+      syncDot.classList.toggle('online',!error);
+    }
+    function save(){ localStorage.setItem(key, JSON.stringify(tasks)); queueCloudSave(); }
+    function saveNotes(){ localStorage.setItem(notesKey,JSON.stringify(notes)); queueCloudSave(); }
+    function saveFocus(){ localStorage.setItem(focusKey,JSON.stringify(focus)); queueCloudSave(); }
     function renderNotes(){
       notesGrid.innerHTML=notes.map(n=>`<article class="sticky" data-id="${n.id}"><textarea aria-label="便签内容" placeholder="写点什么……"></textarea><button class="note-delete" type="button" aria-label="删除便签" title="删除便签">×</button></article>`).join('');
       notesGrid.querySelectorAll('.sticky').forEach(card=>{ const id=Number(card.dataset.id), note=notes.find(n=>n.id===id), area=card.querySelector('textarea'); area.value=note.text; area.addEventListener('input',()=>{ note.text=area.value; saveNotes(); }); card.querySelector('.note-delete').onclick=()=>{ if(confirm('确定删除这张便签吗？')){ notes=notes.filter(n=>n.id!==id); saveNotes(); renderNotes(); } }; });
@@ -230,13 +275,49 @@
     document.getElementById('openPip').onclick=openFloatingReminder;
     document.getElementById('addNote').onclick=()=>{ notes.unshift({id:Date.now(),text:''}); saveNotes(); renderNotes(); notesGrid.querySelector('textarea').focus(); };
     const focusKey='daily-plan-focus-v1', focusDefault={title:'完成核心方案，并交付可评审版本',note:'上午保持专注，先推进最需要深度思考的部分。'};
-    const focus=JSON.parse(localStorage.getItem(focusKey)||'null')||focusDefault;
+    let focus=JSON.parse(localStorage.getItem(focusKey)||'null')||focusDefault;
     focusTitle.textContent=focus.title; focusNote.textContent=focus.note;
-    [focusTitle,focusNote].forEach(el=>el.addEventListener('blur',()=>{ const data={title:focusTitle.textContent.trim()||focusDefault.title,note:focusNote.textContent.trim()||focusDefault.note}; focusTitle.textContent=data.title; focusNote.textContent=data.note; localStorage.setItem(focusKey,JSON.stringify(data)); }));
+    [focusTitle,focusNote].forEach(el=>el.addEventListener('blur',()=>{ focus={title:focusTitle.textContent.trim()||focusDefault.title,note:focusNote.textContent.trim()||focusDefault.note}; focusTitle.textContent=focus.title; focusNote.textContent=focus.note; saveFocus(); }));
     const dialog=document.getElementById('taskDialog');
     document.getElementById('openDialog').onclick=()=>dialog.showModal();
     document.getElementById('cancelDialog').onclick=()=>dialog.close();
     document.getElementById('taskForm').onsubmit=e=>{e.preventDefault(); tasks.push({id:Date.now(),time:taskTime.value,title:taskTitle.value.trim(),note:taskNote.value.trim(),type:taskType.value,done:false}); save(); render(); e.target.reset(); dialog.close();};
+    const authDialog=document.getElementById('authDialog'), authForm=document.getElementById('authForm'), authMessage=document.getElementById('authMessage');
+    function setAuthMessage(text,ok=false){ authMessage.textContent=text; authMessage.classList.toggle('ok',ok); }
+    function setSignedOut(){ currentUser=null; syncDot.classList.remove('online'); accountStatus.textContent='未登录 · 本机保存'; openAuth.hidden=false; logout.hidden=true; notesHint.textContent='想到什么就写下来，登录后可在不同电脑间同步'; }
+    async function loadUserData(user){
+      currentUser=user; openAuth.hidden=true; logout.hidden=false; syncDot.classList.add('online'); accountStatus.textContent='正在读取云端数据…';
+      const {data,error}=await supabaseClient.from('daily_plan_data').select('tasks,notes,focus').eq('user_id',user.id).maybeSingle();
+      if(error){ accountStatus.textContent='云端读取失败'; syncDot.classList.remove('online'); return; }
+      if(data){
+        hydrating=true;
+        tasks=Array.isArray(data.tasks)?data.tasks:tasks;
+        notes=Array.isArray(data.notes)?data.notes:notes;
+        focus=data.focus&&data.focus.title?data.focus:focus;
+        localStorage.setItem(key,JSON.stringify(tasks)); localStorage.setItem(notesKey,JSON.stringify(notes)); localStorage.setItem(focusKey,JSON.stringify(focus));
+        focusTitle.textContent=focus.title; focusNote.textContent=focus.note; render(); renderNotes();
+        hydrating=false;
+      } else await saveToCloud();
+      accountStatus.textContent=`${user.email} · 已同步`; notesHint.textContent='内容已加密连接到你的账号，可在不同电脑间同步';
+    }
+    async function submitAuth(mode){
+      if(!authForm.reportValidity()) return;
+      const email=authEmail.value.trim(), password=authPassword.value;
+      setAuthMessage(mode==='login'?'正在登录…':'正在创建账号…',true);
+      const result=mode==='login'
+        ? await supabaseClient.auth.signInWithPassword({email,password})
+        : await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
+      if(result.error){ setAuthMessage(result.error.message); return; }
+      if(mode==='register' && !result.data.session){ setAuthMessage('注册成功！请打开邮箱完成验证，然后回来登录。',true); return; }
+      authDialog.close(); authForm.reset(); setAuthMessage('');
+    }
+    openAuth.onclick=()=>{ setAuthMessage(''); authDialog.showModal(); };
+    cancelAuth.onclick=()=>authDialog.close();
+    authForm.onsubmit=e=>{ e.preventDefault(); submitAuth('login'); };
+    register.onclick=()=>submitAuth('register');
+    logout.onclick=async()=>{ await supabaseClient.auth.signOut(); setSignedOut(); };
+    supabaseClient.auth.onAuthStateChange((_event,session)=>{ if(session?.user){ if(currentUser?.id!==session.user.id) setTimeout(()=>loadUserData(session.user),0); } else setSignedOut(); });
+    supabaseClient.auth.getSession().then(({data})=>{ if(data.session?.user) loadUserData(data.session.user); else setSignedOut(); });
     setInterval(updatePip,1000);
     setInterval(checkDueNotifications,15000);
     checkDueNotifications();
