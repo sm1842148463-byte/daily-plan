@@ -128,13 +128,16 @@
     .auth-message.ok { color:var(--green); }
     .auth-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
     .auth-actions button { width:100%; }
+    body.auth-locked { overflow:hidden; }
+    body.auth-locked .shell { visibility:hidden; }
+    #authDialog { max-height:calc(100dvh - 24px); overflow:auto; overscroll-behavior:contain; }
     @keyframes enter { from { opacity:0; transform:translateY(8px); } }
     @media (max-width:980px) { .weekly-layout{grid-template-columns:1fr}.week-grid{grid-template-columns:repeat(4,minmax(0,1fr))} }
     @media (max-width:780px) { .shell{width:min(100% - 24px,680px);padding-top:28px} header{display:block}.header-side{width:auto;align-items:flex-start;margin-top:22px}.quote{display:none}.layout{grid-template-columns:1fr}.task{grid-template-columns:50px 22px 1fr}.tag{display:none}.schedule{padding:22px}.side{display:grid;grid-template-columns:1fr 1fr}.focus-card strong{font-size:22px}.notes-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.week-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
-    @media (max-width:520px) { .side{grid-template-columns:1fr} h1{font-size:48px}.quote{display:none}.panel-head,.weekly-head{align-items:flex-start;gap:14px}.weekly-head{flex-direction:column}.head-actions{flex-direction:column;align-items:stretch}.head-actions button{white-space:nowrap}.weekly-panel,.notes-panel{padding:22px}.notes-grid{grid-template-columns:1fr} }
+    @media (max-width:520px) { .side{grid-template-columns:1fr} h1{font-size:48px}.quote{display:none}.panel-head,.weekly-head{align-items:flex-start;gap:14px}.weekly-head{flex-direction:column}.head-actions{flex-direction:column;align-items:stretch}.head-actions button{white-space:nowrap}.weekly-panel,.notes-panel{padding:22px}.notes-grid{grid-template-columns:1fr} #authDialog form{padding:22px 18px}.auth-actions{grid-template-columns:1fr}.auth-actions button{min-height:46px} }
   </style>
 </head>
-<body>
+<body class="auth-locked">
   <main class="shell">
     <header>
       <div>
@@ -194,12 +197,11 @@
   <dialog id="authDialog">
     <form id="authForm">
       <h3>登录或创建账号</h3>
-      <p class="auth-copy">使用邮箱和密码。登录后，任务、重点事项和便签会安全同步到你的账号。</p>
+      <p class="auth-copy">请先登录或注册账号。验证邮箱后才能进入工作台，任务、重点事项和便签会同步到你的账号。</p>
       <label for="authEmail">邮箱</label><input id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" required>
       <label for="authPassword">密码</label><input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="至少 6 位" required>
       <div class="auth-message" id="authMessage" aria-live="polite"></div>
       <div class="auth-actions"><button class="add" type="submit">登录</button><button class="ghost" type="button" id="register">注册新账号</button></div>
-      <div class="form-actions"><button type="button" class="ghost" id="cancelAuth">取消</button></div>
     </form>
   </dialog>
 
@@ -331,9 +333,11 @@
     document.getElementById('taskForm').onsubmit=e=>{e.preventDefault(); tasks.push({id:Date.now(),time:taskTime.value,title:taskTitle.value.trim(),note:taskNote.value.trim(),type:taskType.value,done:false}); save(); render(); e.target.reset(); dialog.close();};
     const authDialog=document.getElementById('authDialog'), authForm=document.getElementById('authForm'), authMessage=document.getElementById('authMessage');
     function setAuthMessage(text,ok=false){ authMessage.textContent=text; authMessage.classList.toggle('ok',ok); }
-    function setSignedOut(){ currentUser=null; syncDot.classList.remove('online'); accountStatus.textContent='未登录 · 本机保存'; openAuth.hidden=false; logout.hidden=true; notesHint.textContent='想到什么就写下来，登录后可在不同电脑间同步'; }
+    function lockWorkspace(){ document.body.classList.add('auth-locked'); if(!authDialog.open) authDialog.showModal(); }
+    function unlockWorkspace(){ document.body.classList.remove('auth-locked'); if(authDialog.open) authDialog.close(); }
+    function setSignedOut(){ currentUser=null; syncDot.classList.remove('online'); accountStatus.textContent='请登录后使用'; openAuth.hidden=false; logout.hidden=true; notesHint.textContent='登录后可在不同设备间安全同步'; lockWorkspace(); }
     async function loadUserData(user){
-      currentUser=user; openAuth.hidden=true; logout.hidden=false; syncDot.classList.add('online'); accountStatus.textContent='正在读取云端数据…';
+      currentUser=user; unlockWorkspace(); openAuth.hidden=true; logout.hidden=false; syncDot.classList.add('online'); accountStatus.textContent='正在读取云端数据…';
       const {data,error}=await supabaseClient.from('daily_plan_data').select('tasks,notes,focus').eq('user_id',user.id).maybeSingle();
       if(error){ accountStatus.textContent='云端读取失败'; syncDot.classList.remove('online'); return; }
       if(data){
@@ -357,10 +361,11 @@
         : await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
       if(result.error){ setAuthMessage(result.error.message); return; }
       if(mode==='register' && !result.data.session){ setAuthMessage('注册成功！请打开邮箱完成验证，然后回来登录。',true); return; }
-      authDialog.close(); authForm.reset(); setAuthMessage('');
+      unlockWorkspace(); authForm.reset(); setAuthMessage('');
     }
     openAuth.onclick=()=>{ setAuthMessage(''); authDialog.showModal(); };
-    cancelAuth.onclick=()=>authDialog.close();
+    authDialog.addEventListener('cancel',e=>{ if(!currentUser) e.preventDefault(); });
+    lockWorkspace();
     authForm.onsubmit=e=>{ e.preventDefault(); submitAuth('login'); };
     register.onclick=()=>submitAuth('register');
     logout.onclick=async()=>{ await supabaseClient.auth.signOut(); setSignedOut(); };
