@@ -76,6 +76,18 @@
     .percent small { display:block; font:11px Inter,sans-serif; color:var(--muted); margin-top:2px; }
     .stats { display:flex; justify-content:space-between; color:var(--muted); font-size:12px; }
     .stats b { display:block; color:var(--ink); font-size:18px; margin-bottom:3px; }
+    .notes-panel { margin-top:22px; padding:28px; }
+    .notes-head { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:22px; }
+    .notes-head h2 { margin:0 0 5px; font-size:18px; }
+    .notes-head p { margin:0; color:var(--muted); font-size:12px; }
+    .notes-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+    .sticky { min-height:168px; padding:18px; border-radius:18px; position:relative; background:#f6e8a8; box-shadow:0 9px 22px rgba(48,43,27,.08); transform:rotate(-.35deg); }
+    .sticky:nth-child(3n+2) { background:#dbeabf; transform:rotate(.45deg); }
+    .sticky:nth-child(3n) { background:#f2d1c6; transform:rotate(-.15deg); }
+    .sticky textarea { display:block; width:100%; height:118px; resize:none; border:0; padding:0 28px 0 0; outline:0; background:transparent; color:#35352d; font:15px/1.7 "PingFang SC","Microsoft YaHei",sans-serif; }
+    .sticky textarea::placeholder { color:rgba(53,53,45,.45); }
+    .note-delete { position:absolute; right:12px; top:11px; width:27px; height:27px; border:0; border-radius:50%; background:rgba(255,255,255,.35); color:#766f5e; cursor:pointer; font-size:16px; }
+    .note-delete:hover { background:rgba(255,255,255,.72); color:#a53e2c; }
     dialog { border:0; border-radius:24px; padding:0; width:min(430px,calc(100% - 30px)); box-shadow:0 28px 90px rgba(0,0,0,.25); background:#faf9f4; }
     dialog::backdrop { background:rgba(20,29,24,.38); backdrop-filter:blur(4px); }
     form { padding:27px; }
@@ -86,8 +98,8 @@
     .form-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
     .ghost { border:1px solid var(--line); background:transparent; border-radius:999px; padding:10px 16px; cursor:pointer; }
     @keyframes enter { from { opacity:0; transform:translateY(8px); } }
-    @media (max-width:780px) { .shell{width:min(100% - 24px,680px);padding-top:28px} header{display:block}.quote{width:auto;margin:24px 0 0}.layout{grid-template-columns:1fr}.task{grid-template-columns:50px 22px 1fr}.tag{display:none}.schedule{padding:22px}.side{display:grid;grid-template-columns:1fr 1fr}.focus-card strong{font-size:22px} }
-    @media (max-width:520px) { .side{grid-template-columns:1fr} h1{font-size:48px}.quote{display:none}.panel-head{align-items:flex-start;gap:14px}.head-actions{flex-direction:column;align-items:stretch}.head-actions button{white-space:nowrap} }
+    @media (max-width:780px) { .shell{width:min(100% - 24px,680px);padding-top:28px} header{display:block}.quote{width:auto;margin:24px 0 0}.layout{grid-template-columns:1fr}.task{grid-template-columns:50px 22px 1fr}.tag{display:none}.schedule{padding:22px}.side{display:grid;grid-template-columns:1fr 1fr}.focus-card strong{font-size:22px}.notes-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+    @media (max-width:520px) { .side{grid-template-columns:1fr} h1{font-size:48px}.quote{display:none}.panel-head{align-items:flex-start;gap:14px}.head-actions{flex-direction:column;align-items:stretch}.head-actions button{white-space:nowrap}.notes-panel{padding:22px}.notes-grid{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
@@ -120,6 +132,10 @@
         </section>
       </aside>
     </section>
+    <section class="panel notes-panel">
+      <div class="notes-head"><div><h2>随手便签</h2><p>想到什么就写下来，内容会自动保存在当前浏览器</p></div><button class="add" id="addNote">＋ 新建便签</button></div>
+      <div class="notes-grid" id="notesGrid"></div>
+    </section>
   </main>
 
   <dialog id="taskDialog">
@@ -146,10 +162,18 @@
     const key = 'daily-plan-v1';
     let tasks = JSON.parse(localStorage.getItem(key) || 'null') || seed.map((t,i)=>({...t,id:Date.now()+i,done:false}));
     const timeline = document.getElementById('timeline');
+    const notesGrid = document.getElementById('notesGrid');
     const labels = {专注:'focus',会议:'meeting'};
     let pipWindow=null;
+    const notesKey='daily-plan-notes-v1';
+    let notes=JSON.parse(localStorage.getItem(notesKey)||'null')||[{id:Date.now(),text:''}];
     const esc = value => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
     function save(){ localStorage.setItem(key, JSON.stringify(tasks)); }
+    function saveNotes(){ localStorage.setItem(notesKey,JSON.stringify(notes)); }
+    function renderNotes(){
+      notesGrid.innerHTML=notes.map(n=>`<article class="sticky" data-id="${n.id}"><textarea aria-label="便签内容" placeholder="写点什么……"></textarea><button class="note-delete" type="button" aria-label="删除便签" title="删除便签">×</button></article>`).join('');
+      notesGrid.querySelectorAll('.sticky').forEach(card=>{ const id=Number(card.dataset.id), note=notes.find(n=>n.id===id), area=card.querySelector('textarea'); area.value=note.text; area.addEventListener('input',()=>{ note.text=area.value; saveNotes(); }); card.querySelector('.note-delete').onclick=()=>{ if(confirm('确定删除这张便签吗？')){ notes=notes.filter(n=>n.id!==id); saveNotes(); renderNotes(); } }; });
+    }
     function render(){
       tasks.sort((a,b)=>a.time.localeCompare(b.time));
       timeline.innerHTML = tasks.map(t=>`<article class="task ${t.done?'done':''}" data-id="${t.id}">
@@ -204,6 +228,7 @@
     const now = new Date();
     document.getElementById('today').textContent = new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'}).format(now);
     document.getElementById('openPip').onclick=openFloatingReminder;
+    document.getElementById('addNote').onclick=()=>{ notes.unshift({id:Date.now(),text:''}); saveNotes(); renderNotes(); notesGrid.querySelector('textarea').focus(); };
     const focusKey='daily-plan-focus-v1', focusDefault={title:'完成核心方案，并交付可评审版本',note:'上午保持专注，先推进最需要深度思考的部分。'};
     const focus=JSON.parse(localStorage.getItem(focusKey)||'null')||focusDefault;
     focusTitle.textContent=focus.title; focusNote.textContent=focus.note;
@@ -216,6 +241,7 @@
     setInterval(checkDueNotifications,15000);
     checkDueNotifications();
     render();
+    renderNotes();
   </script>
 </body>
 </html>
