@@ -83,6 +83,25 @@
     .percent small { display:block; font:11px Inter,sans-serif; color:var(--muted); margin-top:2px; }
     .stats { display:flex; justify-content:space-between; color:var(--muted); font-size:12px; }
     .stats b { display:block; color:var(--ink); font-size:18px; margin-bottom:3px; }
+    .weekly-panel { margin-top:22px; padding:28px; }
+    .weekly-head { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:22px; }
+    .weekly-head h2 { margin:0 0 5px; font-size:18px; }
+    .weekly-head p, .week-range { margin:0; color:var(--muted); font-size:12px; }
+    .week-range { padding:7px 11px; border:1px solid var(--line); border-radius:999px; background:rgba(255,255,255,.6); white-space:nowrap; }
+    .weekly-layout { display:grid; grid-template-columns:minmax(0,2.5fr) minmax(230px,.75fr); gap:16px; }
+    .week-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:10px; }
+    .day-card { min-width:0; min-height:176px; padding:15px 13px; border:1px solid var(--line); border-radius:18px; background:rgba(255,255,255,.58); }
+    .day-card.today-card { border-color:rgba(40,92,69,.42); background:rgba(220,235,130,.22); box-shadow:inset 0 0 0 1px rgba(40,92,69,.08); }
+    .day-head { display:flex; justify-content:space-between; align-items:baseline; gap:6px; margin-bottom:12px; }
+    .day-name { font-size:13px; font-weight:800; }
+    .day-date { color:var(--muted); font-size:10px; white-space:nowrap; }
+    .day-card textarea, .weekly-focus textarea { width:100%; resize:none; border:0; outline:0; background:transparent; color:var(--ink); font:13px/1.65 "PingFang SC","Microsoft YaHei",sans-serif; }
+    .day-card textarea { height:118px; }
+    .day-card textarea::placeholder, .weekly-focus textarea::placeholder { color:#a3aaa5; }
+    .weekly-focus { min-height:176px; padding:19px; border-radius:20px; background:#e7edcf; border:1px solid rgba(40,92,69,.1); }
+    .weekly-focus h3 { margin:0 0 5px; font-size:15px; }
+    .weekly-focus p { margin:0 0 12px; color:#728077; font-size:11px; }
+    .weekly-focus textarea { height:116px; }
     .notes-panel { margin-top:22px; padding:28px; }
     .notes-head { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:22px; }
     .notes-head h2 { margin:0 0 5px; font-size:18px; }
@@ -110,8 +129,9 @@
     .auth-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
     .auth-actions button { width:100%; }
     @keyframes enter { from { opacity:0; transform:translateY(8px); } }
-    @media (max-width:780px) { .shell{width:min(100% - 24px,680px);padding-top:28px} header{display:block}.header-side{width:auto;align-items:flex-start;margin-top:22px}.quote{display:none}.layout{grid-template-columns:1fr}.task{grid-template-columns:50px 22px 1fr}.tag{display:none}.schedule{padding:22px}.side{display:grid;grid-template-columns:1fr 1fr}.focus-card strong{font-size:22px}.notes-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
-    @media (max-width:520px) { .side{grid-template-columns:1fr} h1{font-size:48px}.quote{display:none}.panel-head{align-items:flex-start;gap:14px}.head-actions{flex-direction:column;align-items:stretch}.head-actions button{white-space:nowrap}.notes-panel{padding:22px}.notes-grid{grid-template-columns:1fr} }
+    @media (max-width:980px) { .weekly-layout{grid-template-columns:1fr}.week-grid{grid-template-columns:repeat(4,minmax(0,1fr))} }
+    @media (max-width:780px) { .shell{width:min(100% - 24px,680px);padding-top:28px} header{display:block}.header-side{width:auto;align-items:flex-start;margin-top:22px}.quote{display:none}.layout{grid-template-columns:1fr}.task{grid-template-columns:50px 22px 1fr}.tag{display:none}.schedule{padding:22px}.side{display:grid;grid-template-columns:1fr 1fr}.focus-card strong{font-size:22px}.notes-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.week-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+    @media (max-width:520px) { .side{grid-template-columns:1fr} h1{font-size:48px}.quote{display:none}.panel-head,.weekly-head{align-items:flex-start;gap:14px}.weekly-head{flex-direction:column}.head-actions{flex-direction:column;align-items:stretch}.head-actions button{white-space:nowrap}.weekly-panel,.notes-panel{padding:22px}.notes-grid{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
@@ -146,6 +166,13 @@
           <div class="stats"><span><b id="doneCount">0</b>完成</span><span style="text-align:right"><b id="leftCount">0</b>待处理</span></div>
         </section>
       </aside>
+    </section>
+    <section class="panel weekly-panel">
+      <div class="weekly-head"><div><h2>本周日历</h2><p>每天一个格子，随手记录当天的安排</p></div><div class="week-range" id="weekRange"></div></div>
+      <div class="weekly-layout">
+        <div class="week-grid" id="weekGrid"></div>
+        <aside class="weekly-focus"><h3>本周重点工作</h3><p>写下这一周最需要推进的事项</p><textarea id="weeklyFocus" aria-label="编辑本周重点工作" placeholder="例如：&#10;1. 完成核心方案&#10;2. 推进客户确认&#10;3. 做好周五复盘"></textarea></aside>
+      </div>
     </section>
     <section class="panel notes-panel">
       <div class="notes-head"><div><h2>随手便签</h2><p id="notesHint">想到什么就写下来，登录后可在不同电脑间同步</p></div><button class="add" id="addNote">＋ 新建便签</button></div>
@@ -274,10 +301,24 @@
     document.getElementById('today').textContent = new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'}).format(now);
     document.getElementById('openPip').onclick=openFloatingReminder;
     document.getElementById('addNote').onclick=()=>{ notes.unshift({id:Date.now(),text:''}); saveNotes(); renderNotes(); notesGrid.querySelector('textarea').focus(); };
-    const focusKey='daily-plan-focus-v1', focusDefault={title:'完成核心方案，并交付可评审版本',note:'上午保持专注，先推进最需要深度思考的部分。'};
-    let focus=JSON.parse(localStorage.getItem(focusKey)||'null')||focusDefault;
+    const focusKey='daily-plan-focus-v1', focusDefault={title:'完成核心方案，并交付可评审版本',note:'上午保持专注，先推进最需要深度思考的部分。',weeklyCalendar:{},weeklyPriorities:''};
+    let focus={...focusDefault,...(JSON.parse(localStorage.getItem(focusKey)||'null')||{})};
+    focus.weeklyCalendar=focus.weeklyCalendar||{};
+    focus.weeklyPriorities=focus.weeklyPriorities||'';
     focusTitle.textContent=focus.title; focusNote.textContent=focus.note;
-    [focusTitle,focusNote].forEach(el=>el.addEventListener('blur',()=>{ focus={title:focusTitle.textContent.trim()||focusDefault.title,note:focusNote.textContent.trim()||focusDefault.note}; focusTitle.textContent=focus.title; focusNote.textContent=focus.note; saveFocus(); }));
+    [focusTitle,focusNote].forEach(el=>el.addEventListener('blur',()=>{ focus={...focus,title:focusTitle.textContent.trim()||focusDefault.title,note:focusNote.textContent.trim()||focusDefault.note}; focusTitle.textContent=focus.title; focusNote.textContent=focus.note; saveFocus(); }));
+    const weekNames=['周一','周二','周三','周四','周五','周六','周日'];
+    const dateKey=date=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    function currentWeekDates(){ const base=new Date(), day=base.getDay()||7, monday=new Date(base); monday.setHours(0,0,0,0); monday.setDate(base.getDate()-day+1); return Array.from({length:7},(_,i)=>{ const date=new Date(monday); date.setDate(monday.getDate()+i); return date; }); }
+    function renderWeekly(){
+      const dates=currentWeekDates(), todayKey=dateKey(new Date());
+      weekRange.textContent=`${dates[0].getMonth()+1}月${dates[0].getDate()}日 — ${dates[6].getMonth()+1}月${dates[6].getDate()}日`;
+      weekGrid.innerHTML=dates.map((date,index)=>`<article class="day-card ${dateKey(date)===todayKey?'today-card':''}" data-date="${dateKey(date)}"><div class="day-head"><span class="day-name">${weekNames[index]}</span><span class="day-date">${date.getMonth()+1}/${date.getDate()}</span></div><textarea aria-label="编辑${weekNames[index]}安排" placeholder="写下当天安排…"></textarea></article>`).join('');
+      weekGrid.querySelectorAll('.day-card').forEach(card=>{ const area=card.querySelector('textarea'), key=card.dataset.date; area.value=focus.weeklyCalendar[key]||''; area.addEventListener('input',()=>{ focus.weeklyCalendar[key]=area.value; saveFocus(); }); });
+      weeklyFocus.value=focus.weeklyPriorities;
+    }
+    weeklyFocus.addEventListener('input',()=>{ focus.weeklyPriorities=weeklyFocus.value; saveFocus(); });
+    renderWeekly();
     const dialog=document.getElementById('taskDialog');
     document.getElementById('openDialog').onclick=()=>dialog.showModal();
     document.getElementById('cancelDialog').onclick=()=>dialog.close();
@@ -293,9 +334,10 @@
         hydrating=true;
         tasks=Array.isArray(data.tasks)?data.tasks:tasks;
         notes=Array.isArray(data.notes)?data.notes:notes;
-        focus=data.focus&&data.focus.title?data.focus:focus;
+        focus=data.focus&&data.focus.title?{...focusDefault,...data.focus}:focus;
+        focus.weeklyCalendar=focus.weeklyCalendar||{}; focus.weeklyPriorities=focus.weeklyPriorities||'';
         localStorage.setItem(key,JSON.stringify(tasks)); localStorage.setItem(notesKey,JSON.stringify(notes)); localStorage.setItem(focusKey,JSON.stringify(focus));
-        focusTitle.textContent=focus.title; focusNote.textContent=focus.note; render(); renderNotes();
+        focusTitle.textContent=focus.title; focusNote.textContent=focus.note; render(); renderNotes(); renderWeekly();
         hydrating=false;
       } else await saveToCloud();
       accountStatus.textContent=`${user.email} · 已同步`; notesHint.textContent='内容已加密连接到你的账号，可在不同电脑间同步';
