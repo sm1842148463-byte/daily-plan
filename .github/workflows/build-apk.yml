@@ -28,13 +28,52 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Build debug APK
+      - name: Generate release signing certificate
         working-directory: android
-        run: gradle assembleDebug --stacktrace
+        shell: bash
+        run: |
+          SIGNING_PASSWORD="$(openssl rand -hex 24)"
+          echo "::add-mask::$SIGNING_PASSWORD"
+          keytool -genkeypair -v \
+            -keystore daily-plan-release.jks \
+            -alias dailyplan \
+            -keyalg RSA \
+            -keysize 4096 \
+            -validity 10000 \
+            -storepass "$SIGNING_PASSWORD" \
+            -keypass "$SIGNING_PASSWORD" \
+            -dname "CN=Daily Plan, OU=Mobile, O=Daily Plan, L=Shanghai, ST=Shanghai, C=CN"
+          echo "DAILY_PLAN_KEYSTORE=$GITHUB_WORKSPACE/android/daily-plan-release.jks" >> "$GITHUB_ENV"
+          echo "DAILY_PLAN_STORE_PASSWORD=$SIGNING_PASSWORD" >> "$GITHUB_ENV"
+          echo "DAILY_PLAN_KEY_PASSWORD=$SIGNING_PASSWORD" >> "$GITHUB_ENV"
+          echo "DAILY_PLAN_KEY_ALIAS=dailyplan" >> "$GITHUB_ENV"
+          mkdir -p "$GITHUB_WORKSPACE/release-output"
+          {
+            echo "今日工作安排 Android 正式版签名信息"
+            echo "================================="
+            echo "密钥别名：dailyplan"
+            echo "证书密码：$SIGNING_PASSWORD"
+            echo "应用包名：com.dailyplan.app"
+            echo "版本：1.0.0 (1)"
+            echo
+            echo "重要：以后发布新版本必须同时使用 daily-plan-release.jks 和本密码。"
+            echo "请至少保留两份离线备份，不要上传到公开网盘或代码仓库。"
+          } > "$GITHUB_WORKSPACE/release-output/签名信息-请妥善保管.txt"
 
-      - name: Upload APK
+      - name: Build signed release APK
+        working-directory: android
+        run: gradle assembleRelease --stacktrace
+
+      - name: Package release files
+        shell: bash
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk release-output/今日工作安排-v1.0.0.apk
+          cp android/daily-plan-release.jks release-output/daily-plan-release.jks
+          sha256sum release-output/今日工作安排-v1.0.0.apk > release-output/SHA256.txt
+
+      - name: Upload signed release package
         uses: actions/upload-artifact@v4
         with:
-          name: daily-plan-android
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: daily-plan-release-v1.0.0
+          path: release-output/*
           if-no-files-found: error
