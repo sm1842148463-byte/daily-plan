@@ -41,10 +41,9 @@ jobs:
         working-directory: android
         shell: bash
         run: |
-          SIGNING_INFO="$(find "$GITHUB_WORKSPACE/signing-source" -type f -name '*.txt' -print -quit)"
           SIGNING_KEY="$(find "$GITHUB_WORKSPACE/signing-source" -type f -name 'daily-plan-release.jks' -print -quit)"
-          test -n "$SIGNING_INFO" && test -n "$SIGNING_KEY"
-          SIGNING_PASSWORD="$(grep -oE '[0-9a-f]{64}' "$SIGNING_INFO" | head -n 1)"
+          test -n "$SIGNING_KEY"
+          SIGNING_PASSWORD="$(grep -RahoE '[0-9a-f]{64}' "$GITHUB_WORKSPACE/signing-source" | head -n 1)"
           test -n "$SIGNING_PASSWORD"
           echo "::add-mask::$SIGNING_PASSWORD"
           cp "$SIGNING_KEY" daily-plan-release.jks
