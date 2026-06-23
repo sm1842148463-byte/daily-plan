@@ -10,7 +10,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      actions: read
       contents: read
 
     steps:
@@ -28,36 +27,24 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Download existing release certificate
-        uses: actions/download-artifact@v4
-        with:
-          name: daily-plan-release-v1.0.0
-          path: signing-source
-          github-token: ${{ github.token }}
-          repository: sm1842148463-byte/daily-plan
-          run-id: 27966880766
-
-      - name: Prepare existing release certificate
+      - name: Prepare release signing from GitHub Secrets
         working-directory: android
         shell: bash
+        env:
+          DAILY_PLAN_KEYSTORE_BASE64: ${{ secrets.DAILY_PLAN_KEYSTORE_BASE64 }}
+          DAILY_PLAN_STORE_PASSWORD: ${{ secrets.DAILY_PLAN_STORE_PASSWORD }}
+          DAILY_PLAN_KEY_PASSWORD: ${{ secrets.DAILY_PLAN_KEY_PASSWORD }}
+          DAILY_PLAN_KEY_ALIAS: ${{ secrets.DAILY_PLAN_KEY_ALIAS }}
         run: |
-          SIGNING_INFO="$(find "$GITHUB_WORKSPACE/signing-source" -type f ! -name 'daily-plan-release.jks' ! -name 'SHA256.txt' -print -quit)"
-          SIGNING_KEY="$(find "$GITHUB_WORKSPACE/signing-source" -type f -name 'daily-plan-release.jks' -print -quit)"
-          test -n "$SIGNING_INFO" && test -n "$SIGNING_KEY"
-          SIGNING_PASSWORD="$(python3 - "$SIGNING_INFO" <<'PY'
-          import re, sys
-          data = open(sys.argv[1], 'rb').read().decode('utf-8', 'ignore')
-          match = re.search(r'[0-9a-f]{64}', data)
-          print(match.group(0) if match else '')
-          PY
-          )"
-          test -n "$SIGNING_PASSWORD"
-          echo "::add-mask::$SIGNING_PASSWORD"
-          cp "$SIGNING_KEY" daily-plan-release.jks
+          test -n "$DAILY_PLAN_KEYSTORE_BASE64"
+          test -n "$DAILY_PLAN_STORE_PASSWORD"
+          test -n "$DAILY_PLAN_KEY_PASSWORD"
+          test -n "$DAILY_PLAN_KEY_ALIAS"
+          printf '%s' "$DAILY_PLAN_KEYSTORE_BASE64" | base64 -d > daily-plan-release.jks
           echo "DAILY_PLAN_KEYSTORE=$GITHUB_WORKSPACE/android/daily-plan-release.jks" >> "$GITHUB_ENV"
-          echo "DAILY_PLAN_STORE_PASSWORD=$SIGNING_PASSWORD" >> "$GITHUB_ENV"
-          echo "DAILY_PLAN_KEY_PASSWORD=$SIGNING_PASSWORD" >> "$GITHUB_ENV"
-          echo "DAILY_PLAN_KEY_ALIAS=dailyplan" >> "$GITHUB_ENV"
+          echo "DAILY_PLAN_STORE_PASSWORD=$DAILY_PLAN_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "DAILY_PLAN_KEY_PASSWORD=$DAILY_PLAN_KEY_PASSWORD" >> "$GITHUB_ENV"
+          echo "DAILY_PLAN_KEY_ALIAS=$DAILY_PLAN_KEY_ALIAS" >> "$GITHUB_ENV"
           mkdir -p "$GITHUB_WORKSPACE/release-output"
 
       - name: Build signed release APK
@@ -70,7 +57,7 @@ jobs:
           cp android/app/build/outputs/apk/release/app-release.apk release-output/daily-plan-v1.0.2.apk
           sha256sum release-output/daily-plan-v1.0.2.apk > release-output/SHA256.txt
 
-      - name: Upload signed release package
+      - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
           name: daily-plan-release-v1.0.2
