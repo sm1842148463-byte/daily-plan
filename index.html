@@ -64,6 +64,19 @@
     .home-progress-text { display:flex; justify-content:space-between; margin-top:12px; color:var(--muted); font-size:12px; }
     .home-progress-text b { color:var(--ink); font-size:18px; }
     .home-jump { width:100%; margin-top:18px; }
+    .anniversary-panel { margin-top:16px; padding:22px; }
+    .anniversary-head { display:flex; justify-content:space-between; align-items:center; gap:14px; margin-bottom:14px; }
+    .anniversary-head h3 { margin:0; font-size:15px; }
+    .anniversary-head p { margin:4px 0 0; color:var(--muted); font-size:12px; }
+    .anniversary-form { display:grid; grid-template-columns:minmax(0,1fr) 150px auto; gap:9px; margin-bottom:12px; }
+    .anniversary-form input { min-width:0; }
+    .anniversary-list { display:flex; flex-direction:column; gap:9px; }
+    .anniversary-item { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:10px; align-items:center; padding:11px 12px; border:1px solid var(--line); border-radius:15px; background:rgba(255,255,255,.56); }
+    .anniversary-name { font-weight:800; font-size:14px; }
+    .anniversary-date { color:var(--muted); font-size:12px; margin-top:3px; }
+    .anniversary-days { color:var(--green); font-weight:900; font-size:14px; white-space:nowrap; }
+    .anniversary-delete { width:28px; height:28px; border:0; border-radius:50%; background:rgba(255,255,255,.66); color:#9aa39d; cursor:pointer; font-size:16px; }
+    .anniversary-empty { color:var(--muted); font-size:13px; line-height:1.6; padding:10px 2px; }
     .bottom-nav { display:none; }
     .layout { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(280px,.8fr); gap:22px; }
     .panel { background:var(--card); border:1px solid rgba(255,255,255,.8); border-radius:26px; box-shadow:var(--shadow); backdrop-filter:blur(16px); }
@@ -251,6 +264,32 @@
         -webkit-box-orient:vertical;
         overflow:hidden;
         font-size:12px;
+      }
+      .anniversary-panel {
+        margin-top:10px;
+        padding:16px;
+      }
+      .anniversary-head {
+        align-items:flex-start;
+        margin-bottom:12px;
+      }
+      .anniversary-head p {
+        display:block;
+        font-size:11px;
+      }
+      .anniversary-form {
+        grid-template-columns:1fr;
+        gap:8px;
+      }
+      .anniversary-form .add {
+        width:100%;
+      }
+      .anniversary-item {
+        grid-template-columns:minmax(0,1fr) auto 30px;
+        padding:10px;
+      }
+      .anniversary-days {
+        font-size:13px;
       }
       body[data-view="home"] .layout,
       body[data-view="home"] .weekly-panel,
@@ -531,6 +570,15 @@
           <button class="ghost home-jump" type="button" data-open-view="week">查看本周日历</button>
         </article>
       </div>
+      <section class="panel anniversary-panel">
+        <div class="anniversary-head"><div><h3>纪念日倒计时</h3><p id="anniversarySummary">添加一个重要日子，首页会显示倒计时</p></div></div>
+        <form class="anniversary-form" id="anniversaryForm">
+          <input id="anniversaryName" placeholder="例如：客户交付日 / 生日 / 结婚纪念日" required>
+          <input id="anniversaryDate" type="date" required>
+          <button class="add" type="submit">添加</button>
+        </form>
+        <div class="anniversary-list" id="anniversaryList"></div>
+      </section>
     </section>
 
     <section class="layout">
@@ -693,6 +741,49 @@
       homeLeftCount.textContent=left;
       homeProgressBar.style.width=pct+'%';
     }
+    function daysUntil(dateValue){
+      const target=new Date(`${dateValue}T00:00:00`), today=new Date();
+      today.setHours(0,0,0,0);
+      if(Number.isNaN(target.getTime())) return null;
+      return Math.ceil((target-today)/86400000);
+    }
+    function anniversaryText(days){
+      if(days===null) return '日期无效';
+      if(days===0) return '就是今天';
+      if(days>0) return `还有 ${days} 天`;
+      return `已过去 ${Math.abs(days)} 天`;
+    }
+    function sortedAnniversaries(){
+      return [...focus.anniversaries].sort((a,b)=>{
+        const da=daysUntil(a.date), db=daysUntil(b.date);
+        const va=da===null ? 999999 : (da<0 ? 999999+Math.abs(da) : da);
+        const vb=db===null ? 999999 : (db<0 ? 999999+Math.abs(db) : db);
+        return va-vb;
+      });
+    }
+    function renderAnniversaries(){
+      focus.anniversaries=Array.isArray(focus.anniversaries)?focus.anniversaries:[];
+      const items=sortedAnniversaries();
+      const next=items.find(item=>daysUntil(item.date)!==null);
+      anniversarySummary.textContent=next ? `${next.name}：${anniversaryText(daysUntil(next.date))}` : '添加一个重要日子，首页会显示倒计时';
+      if(!items.length){
+        anniversaryList.innerHTML='<div class="anniversary-empty">还没有纪念日。可以添加生日、交付日、考试日、旅行日这类重要节点。</div>';
+        return;
+      }
+      anniversaryList.innerHTML=items.map(item=>{
+        const days=daysUntil(item.date);
+        return `<article class="anniversary-item" data-id="${item.id}"><div><div class="anniversary-name">${esc(item.name)}</div><div class="anniversary-date">${esc(item.date)}</div></div><div class="anniversary-days">${esc(anniversaryText(days))}</div><button class="anniversary-delete" type="button" aria-label="删除 ${esc(item.name)}" title="删除">×</button></article>`;
+      }).join('');
+      anniversaryList.querySelectorAll('.anniversary-delete').forEach(btn=>btn.addEventListener('click',e=>{
+        const id=Number(e.target.closest('.anniversary-item').dataset.id);
+        const item=focus.anniversaries.find(a=>a.id===id);
+        if(confirm(`确定删除“${item?.name || '这个纪念日'}”吗？`)){
+          focus.anniversaries=focus.anniversaries.filter(a=>a.id!==id);
+          saveFocus();
+          renderAnniversaries();
+        }
+      }));
+    }
     function updatePip(){
       if(!pipWindow || pipWindow.closed) return;
       const task=nextTask(), doc=pipWindow.document;
@@ -728,10 +819,20 @@
     document.querySelectorAll('[data-open-view]').forEach(btn=>btn.addEventListener('click',()=>setView(btn.dataset.openView)));
     document.getElementById('openPip').onclick=openFloatingReminder;
     document.getElementById('addNote').onclick=()=>{ notes.unshift({id:Date.now(),text:''}); saveNotes(); renderNotes(); notesGrid.querySelector('textarea').focus(); };
-    const focusKey='daily-plan-focus-v1', focusDefault={title:'完成核心方案，并交付可评审版本',note:'上午保持专注，先推进最需要深度思考的部分。',weeklyCalendar:{},weeklyPriorities:''};
+    anniversaryForm.onsubmit=e=>{
+      e.preventDefault();
+      const name=anniversaryName.value.trim(), date=anniversaryDate.value;
+      if(!name || !date) return;
+      focus.anniversaries.push({id:Date.now(),name,date});
+      saveFocus();
+      renderAnniversaries();
+      anniversaryForm.reset();
+    };
+    const focusKey='daily-plan-focus-v1', focusDefault={title:'完成核心方案，并交付可评审版本',note:'上午保持专注，先推进最需要深度思考的部分。',weeklyCalendar:{},weeklyPriorities:'',anniversaries:[]};
     let focus={...focusDefault,...(JSON.parse(localStorage.getItem(focusKey)||'null')||{})};
     focus.weeklyCalendar=focus.weeklyCalendar||{};
     focus.weeklyPriorities=focus.weeklyPriorities||'';
+    focus.anniversaries=Array.isArray(focus.anniversaries)?focus.anniversaries:[];
     focusTitle.textContent=focus.title; focusNote.textContent=focus.note;
     [focusTitle,focusNote].forEach(el=>el.addEventListener('blur',()=>{ focus={...focus,title:focusTitle.textContent.trim()||focusDefault.title,note:focusNote.textContent.trim()||focusDefault.note}; focusTitle.textContent=focus.title; focusNote.textContent=focus.note; updateHome(); saveFocus(); }));
     const weekNames=['周一','周二','周三','周四','周五','周六','周日'];
@@ -746,6 +847,7 @@
     }
     weeklyFocus.addEventListener('input',()=>{ focus.weeklyPriorities=weeklyFocus.value; saveFocus(); });
     renderWeekly();
+    renderAnniversaries();
     const dialog=document.getElementById('taskDialog');
     document.getElementById('openDialog').onclick=()=>dialog.showModal();
     document.getElementById('cancelDialog').onclick=()=>dialog.close();
@@ -764,10 +866,11 @@
         hydrating=true;
         tasks=Array.isArray(data.tasks)?data.tasks:tasks;
         notes=Array.isArray(data.notes)?data.notes:notes;
-        focus=data.focus&&data.focus.title?{...focusDefault,...data.focus}:focus;
+        focus=data.focus?{...focusDefault,...data.focus}:focus;
         focus.weeklyCalendar=focus.weeklyCalendar||{}; focus.weeklyPriorities=focus.weeklyPriorities||'';
+        focus.anniversaries=Array.isArray(focus.anniversaries)?focus.anniversaries:[];
         localStorage.setItem(key,JSON.stringify(tasks)); localStorage.setItem(notesKey,JSON.stringify(notes)); localStorage.setItem(focusKey,JSON.stringify(focus));
-        focusTitle.textContent=focus.title; focusNote.textContent=focus.note; render(); renderNotes(); renderWeekly();
+        focusTitle.textContent=focus.title; focusNote.textContent=focus.note; render(); renderNotes(); renderWeekly(); renderAnniversaries();
         hydrating=false;
       } else await saveToCloud();
       accountStatus.textContent=`${user.email} · 已同步`; setSaveStatus('已保存并同步','saved'); notesHint.textContent='内容已加密连接到你的账号，可在不同电脑间同步';
