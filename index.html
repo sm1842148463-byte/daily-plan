@@ -135,6 +135,241 @@
     @media (max-width:980px) { .weekly-layout{grid-template-columns:1fr}.week-grid{grid-template-columns:repeat(4,minmax(0,1fr))} }
     @media (max-width:780px) { .shell{width:min(100% - 24px,680px);padding-top:28px} header{display:block}.header-side{width:auto;align-items:flex-start;margin-top:22px}.quote{display:none}.layout{grid-template-columns:1fr}.task{grid-template-columns:50px 22px 1fr}.tag{display:none}.schedule{padding:22px}.side{display:grid;grid-template-columns:1fr 1fr}.focus-card strong{font-size:22px}.notes-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.week-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
     @media (max-width:520px) { .side{grid-template-columns:1fr} h1{font-size:48px}.quote{display:none}.panel-head,.weekly-head{align-items:flex-start;gap:14px}.weekly-head{flex-direction:column}.head-actions{flex-direction:column;align-items:stretch}.head-actions button{white-space:nowrap}.weekly-panel,.notes-panel{padding:22px}.notes-grid{grid-template-columns:1fr} #authDialog form{padding:22px 18px}.auth-actions{grid-template-columns:1fr}.auth-actions button{min-height:46px} }
+    @media (max-width:600px) {
+      body {
+        background:
+          radial-gradient(circle at 0% 0%, rgba(220,235,130,.35), transparent 18rem),
+          var(--paper);
+      }
+      body::before { opacity:.12; }
+      .shell {
+        width:100%;
+        padding:18px 10px calc(34px + env(safe-area-inset-bottom));
+      }
+      header {
+        margin:0 0 12px;
+        padding:0 4px;
+      }
+      .eyebrow {
+        font-size:11px;
+        letter-spacing:.12em;
+      }
+      .eyebrow::before { width:18px; }
+      h1 {
+        margin:7px 0 6px;
+        font-size:34px;
+        line-height:1.02;
+        letter-spacing:-.04em;
+      }
+      .date { font-size:12px; }
+      .header-side {
+        margin-top:12px;
+        gap:8px;
+      }
+      .account {
+        width:100%;
+        min-height:42px;
+        padding:6px 6px 6px 11px;
+        gap:7px;
+      }
+      .account-status {
+        flex:1;
+        max-width:none;
+        font-size:11px;
+      }
+      .account button {
+        padding:7px 10px;
+        font-size:12px;
+      }
+      .layout,
+      .side {
+        gap:10px;
+      }
+      .panel {
+        border-radius:20px;
+        box-shadow:0 10px 28px rgba(36,48,40,.08);
+      }
+      .schedule,
+      .focus-card,
+      .progress-card,
+      .weekly-panel,
+      .notes-panel {
+        padding:16px;
+      }
+      .panel-head,
+      .notes-head,
+      .weekly-head {
+        margin-bottom:12px;
+      }
+      .panel-head h2,
+      .side h2,
+      .weekly-head h2,
+      .notes-head h2 {
+        font-size:16px;
+      }
+      .head-actions {
+        width:100%;
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:8px;
+      }
+      .add,
+      .float-btn {
+        min-height:38px;
+        padding:8px 10px;
+        font-size:13px;
+      }
+      .timeline {
+        gap:8px;
+      }
+      .task {
+        grid-template-columns:48px 22px minmax(0,1fr) 30px;
+        gap:9px;
+        align-items:center;
+        padding:12px;
+        border:1px solid var(--line);
+        border-radius:16px;
+        background:rgba(255,255,255,.56);
+      }
+      .task + .task { border-top:1px solid var(--line); }
+      .time {
+        padding-top:0;
+        font-size:12px;
+        font-weight:750;
+        color:var(--green);
+      }
+      .task-title {
+        margin-bottom:3px;
+        font-size:14px;
+        line-height:1.32;
+      }
+      .task-note {
+        display:-webkit-box;
+        -webkit-line-clamp:2;
+        -webkit-box-orient:vertical;
+        overflow:hidden;
+        font-size:12px;
+        line-height:1.45;
+      }
+      .task-actions {
+        justify-content:flex-end;
+      }
+      .delete {
+        width:30px;
+        height:30px;
+        background:rgba(255,255,255,.55);
+      }
+      .focus-card strong {
+        max-width:none;
+        margin-top:12px;
+        font-size:21px;
+      }
+      .focus-card p {
+        margin-top:8px;
+        font-size:12px;
+      }
+      .edit-hint {
+        margin-top:12px;
+      }
+      .progress-card {
+        display:grid;
+        grid-template-columns:auto 1fr;
+        align-items:center;
+        gap:10px 14px;
+      }
+      .progress-card h2 {
+        grid-column:1 / -1;
+      }
+      .progress-ring {
+        width:82px;
+        height:82px;
+        margin:0;
+      }
+      .progress-ring::before {
+        width:62px;
+        height:62px;
+      }
+      .percent {
+        font-size:20px;
+      }
+      .percent small {
+        font-size:9px;
+      }
+      .stats {
+        align-self:stretch;
+        align-items:center;
+        gap:10px;
+        font-size:11px;
+      }
+      .stats b {
+        font-size:17px;
+      }
+      .weekly-head p,
+      .notes-head p {
+        display:none;
+      }
+      .weekly-head {
+        flex-direction:row;
+        align-items:center;
+      }
+      .week-range {
+        padding:6px 9px;
+        font-size:10px;
+      }
+      .weekly-layout {
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+      }
+      .week-grid {
+        display:flex;
+        gap:9px;
+        margin:0 -16px;
+        padding:0 16px 4px;
+        overflow-x:auto;
+        scroll-snap-type:x proximity;
+        -webkit-overflow-scrolling:touch;
+      }
+      .week-grid::-webkit-scrollbar { display:none; }
+      .day-card {
+        flex:0 0 158px;
+        min-height:132px;
+        padding:12px;
+        border-radius:16px;
+        scroll-snap-align:start;
+      }
+      .day-card textarea {
+        height:82px;
+        font-size:12px;
+        line-height:1.5;
+      }
+      .weekly-focus {
+        min-height:0;
+        padding:14px;
+        border-radius:16px;
+      }
+      .weekly-focus textarea {
+        height:92px;
+        font-size:12px;
+      }
+      .notes-head {
+        align-items:center;
+      }
+      .notes-grid {
+        gap:10px;
+      }
+      .sticky {
+        min-height:132px;
+        padding:14px;
+        border-radius:16px;
+        transform:none !important;
+      }
+      .sticky textarea {
+        height:90px;
+        font-size:13px;
+        line-height:1.55;
+      }
+    }
   </style>
 </head>
 <body class="auth-locked">
