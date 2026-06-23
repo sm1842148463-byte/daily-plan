@@ -18,7 +18,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
-    private static final String APP_URL = "https://sm1842148463-byte.github.io/daily-plan/?appVersion=1.0.2";
+    private static final String APP_URL = "https://sm1842148463-byte.github.io/daily-plan/?appVersion=1.0.2-20260623";
     private WebView webView;
 
     @SuppressLint("SetJavaScriptEnabled")
