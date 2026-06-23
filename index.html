@@ -39,6 +39,32 @@
     .account button.ghost-account { border:1px solid var(--line); background:transparent; color:var(--green); }
     .sync-dot { width:7px; height:7px; border-radius:50%; background:#a7afa9; }
     .sync-dot.online { background:#62a776; box-shadow:0 0 0 4px rgba(98,167,118,.14); }
+    .save-status { display:inline-flex; align-items:center; gap:7px; margin-top:8px; color:var(--muted); font-size:12px; }
+    .save-status::before { content:""; width:7px; height:7px; border-radius:50%; background:#a7afa9; }
+    .save-status.saving::before { background:#ec815c; box-shadow:0 0 0 4px rgba(236,129,92,.14); }
+    .save-status.saved::before { background:#62a776; box-shadow:0 0 0 4px rgba(98,167,118,.14); }
+    .save-status.error { color:#a34f38; }
+    .save-status.error::before { background:#a34f38; box-shadow:0 0 0 4px rgba(163,79,56,.12); }
+    .home-panel { display:none; }
+    .home-summary { padding:26px; margin-bottom:22px; background:linear-gradient(135deg,#285c45,#1d3f31); color:#fff; overflow:hidden; position:relative; }
+    .home-summary::after { content:""; position:absolute; width:170px; height:170px; border-radius:50%; right:-70px; top:-80px; border:34px solid rgba(220,235,130,.12); }
+    .home-kicker { position:relative; z-index:1; color:#dce5df; font-size:12px; letter-spacing:.14em; text-transform:uppercase; font-weight:800; }
+    .home-title { position:relative; z-index:1; margin:14px 0 8px; max-width:650px; font-family:Georgia,"Songti SC",serif; font-size:30px; line-height:1.25; font-weight:500; }
+    .home-note { position:relative; z-index:1; max-width:620px; margin:0; color:#bdcec4; font-size:13px; line-height:1.6; }
+    .home-mini-grid { display:grid; grid-template-columns:1.1fr .9fr; gap:16px; }
+    .home-mini { padding:22px; }
+    .home-mini h3 { margin:0 0 14px; font-size:15px; }
+    .next-row { display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:10px; }
+    .next-time { color:var(--green); font-size:24px; font-family:Georgia,serif; }
+    .next-countdown { color:var(--muted); font-size:12px; white-space:nowrap; }
+    .next-title { margin:0; font-size:18px; font-weight:800; line-height:1.35; }
+    .next-note { margin:8px 0 0; color:var(--muted); font-size:13px; line-height:1.55; }
+    .home-progress-line { height:10px; border-radius:999px; background:#e8e8e1; overflow:hidden; }
+    .home-progress-line span { display:block; height:100%; width:0%; border-radius:999px; background:var(--orange); transition:.25s; }
+    .home-progress-text { display:flex; justify-content:space-between; margin-top:12px; color:var(--muted); font-size:12px; }
+    .home-progress-text b { color:var(--ink); font-size:18px; }
+    .home-jump { width:100%; margin-top:18px; }
+    .bottom-nav { display:none; }
     .layout { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(280px,.8fr); gap:22px; }
     .panel { background:var(--card); border:1px solid rgba(255,255,255,.8); border-radius:26px; box-shadow:var(--shadow); backdrop-filter:blur(16px); }
     .schedule { padding:28px; }
@@ -144,7 +170,7 @@
       body::before { opacity:.12; }
       .shell {
         width:100%;
-        padding:18px 10px calc(34px + env(safe-area-inset-bottom));
+        padding:18px 10px calc(86px + env(safe-area-inset-bottom));
       }
       header {
         margin:0 0 12px;
@@ -180,6 +206,103 @@
       .account button {
         padding:7px 10px;
         font-size:12px;
+      }
+      .save-status {
+        margin-top:4px;
+        padding-left:4px;
+        font-size:11px;
+      }
+      .home-panel {
+        display:block;
+      }
+      .home-summary {
+        margin-bottom:10px;
+        padding:20px;
+        border-radius:22px;
+      }
+      .home-title {
+        margin-top:12px;
+        font-size:24px;
+      }
+      .home-note {
+        font-size:12px;
+      }
+      .home-mini-grid {
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+      }
+      .home-mini {
+        padding:16px;
+      }
+      .home-mini h3 {
+        margin-bottom:10px;
+        font-size:14px;
+      }
+      .next-time {
+        font-size:22px;
+      }
+      .next-title {
+        font-size:16px;
+      }
+      .next-note {
+        display:-webkit-box;
+        -webkit-line-clamp:2;
+        -webkit-box-orient:vertical;
+        overflow:hidden;
+        font-size:12px;
+      }
+      body[data-view="home"] .layout,
+      body[data-view="home"] .weekly-panel,
+      body[data-view="home"] .notes-panel,
+      body[data-view="today"] .home-panel,
+      body[data-view="today"] .weekly-panel,
+      body[data-view="today"] .notes-panel,
+      body[data-view="week"] .home-panel,
+      body[data-view="week"] .layout,
+      body[data-view="week"] .notes-panel,
+      body[data-view="notes"] .home-panel,
+      body[data-view="notes"] .layout,
+      body[data-view="notes"] .weekly-panel {
+        display:none;
+      }
+      body[data-view="today"] .layout,
+      body[data-view="week"] .weekly-panel,
+      body[data-view="notes"] .notes-panel {
+        display:block;
+      }
+      .bottom-nav {
+        position:fixed;
+        left:10px;
+        right:10px;
+        bottom:calc(10px + env(safe-area-inset-bottom));
+        z-index:20;
+        display:grid;
+        grid-template-columns:repeat(4,1fr);
+        gap:5px;
+        padding:7px;
+        border:1px solid rgba(255,255,255,.75);
+        border-radius:22px;
+        background:rgba(255,255,255,.86);
+        box-shadow:0 16px 45px rgba(36,48,40,.18);
+        backdrop-filter:blur(18px);
+      }
+      .bottom-nav button {
+        border:0;
+        border-radius:16px;
+        min-height:46px;
+        background:transparent;
+        color:var(--muted);
+        font-weight:800;
+        font-size:12px;
+      }
+      .bottom-nav button.active {
+        background:var(--green);
+        color:#fff;
+        box-shadow:0 8px 18px rgba(40,92,69,.18);
+      }
+      body.auth-locked .bottom-nav {
+        display:none;
       }
       .layout,
       .side {
@@ -372,7 +495,7 @@
     }
   </style>
 </head>
-<body class="auth-locked">
+<body class="auth-locked" data-view="home">
   <main class="shell">
     <header>
       <div>
@@ -382,9 +505,33 @@
       </div>
       <div class="header-side">
         <div class="account"><span class="sync-dot" id="syncDot"></span><span class="account-status" id="accountStatus">未登录 · 本机保存</span><button id="openAuth">登录 / 注册</button><button class="ghost-account" id="logout" hidden>退出</button></div>
+        <div class="save-status" id="saveStatus">等待登录同步</div>
         <div class="quote">把注意力放在真正重要的事情上，剩下的交给节奏。</div>
       </div>
     </header>
+
+    <section class="home-panel">
+      <div class="panel home-summary">
+        <div class="home-kicker">Today Focus</div>
+        <div class="home-title" id="homeFocusTitle">今日重点</div>
+        <p class="home-note" id="homeFocusNote">登录后同步你的今日重点和工作安排。</p>
+      </div>
+      <div class="home-mini-grid">
+        <article class="panel home-mini">
+          <h3>下一项待办</h3>
+          <div class="next-row"><span class="next-time" id="homeNextTime">--:--</span><span class="next-countdown" id="homeNextCountdown">等待安排</span></div>
+          <p class="next-title" id="homeNextTitle">暂无待办</p>
+          <p class="next-note" id="homeNextNote">添加任务后，这里会优先显示下一个待提醒事项。</p>
+          <button class="add home-jump" type="button" data-open-view="today">查看今日安排</button>
+        </article>
+        <article class="panel home-mini">
+          <h3>今日完成度</h3>
+          <div class="home-progress-line"><span id="homeProgressBar"></span></div>
+          <div class="home-progress-text"><span><b id="homeDoneCount">0</b> 已完成</span><span><b id="homeLeftCount">0</b> 待处理</span></div>
+          <button class="ghost home-jump" type="button" data-open-view="week">查看本周日历</button>
+        </article>
+      </div>
+    </section>
 
     <section class="layout">
       <div class="panel schedule">
@@ -417,6 +564,13 @@
       <div class="notes-grid" id="notesGrid"></div>
     </section>
   </main>
+
+  <nav class="bottom-nav" aria-label="手机底部导航">
+    <button type="button" class="active" data-view="home">首页</button>
+    <button type="button" data-view="today">今日</button>
+    <button type="button" data-view="week">本周</button>
+    <button type="button" data-view="notes">便签</button>
+  </nav>
 
   <dialog id="taskDialog">
     <form id="taskForm">
@@ -458,23 +612,32 @@
     let tasks = JSON.parse(localStorage.getItem(key) || 'null') || seed.map((t,i)=>({...t,id:Date.now()+i,done:false}));
     const timeline = document.getElementById('timeline');
     const notesGrid = document.getElementById('notesGrid');
+    const saveStatus = document.getElementById('saveStatus');
     const labels = {专注:'focus',会议:'meeting'};
     let pipWindow=null;
     const notesKey='daily-plan-notes-v1';
     let notes=JSON.parse(localStorage.getItem(notesKey)||'null')||[{id:Date.now(),text:''}];
     const esc = value => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
     let currentUser=null, syncTimer=null, hydrating=false;
+    function setSaveStatus(text,state='saved'){
+      saveStatus.textContent=text;
+      saveStatus.className=`save-status ${state}`;
+    }
     function queueCloudSave(){
-      if(!currentUser || hydrating) return;
+      if(hydrating) return;
+      if(!currentUser){ setSaveStatus('已保存到本机，登录后可同步','saved'); return; }
       clearTimeout(syncTimer);
       accountStatus.textContent='正在同步…';
+      setSaveStatus('正在保存到云端…','saving');
       syncTimer=setTimeout(saveToCloud,450);
     }
     async function saveToCloud(){
       if(!currentUser) return;
+      setSaveStatus('正在保存到云端…','saving');
       const {error}=await supabaseClient.from('daily_plan_data').upsert({user_id:currentUser.id,tasks,notes,focus,updated_at:new Date().toISOString()});
       accountStatus.textContent=error ? '同步失败，请稍后重试' : `${currentUser.email} · 已同步`;
       syncDot.classList.toggle('online',!error);
+      setSaveStatus(error ? '同步失败，内容已先保存在本机' : '已保存并同步', error ? 'error' : 'saved');
     }
     function save(){ localStorage.setItem(key, JSON.stringify(tasks)); queueCloudSave(); }
     function saveNotes(){ localStorage.setItem(notesKey,JSON.stringify(notes)); queueCloudSave(); }
@@ -494,6 +657,7 @@
       document.getElementById('doneCount').textContent = done;
       document.getElementById('leftCount').textContent = tasks.length-done;
       document.getElementById('ring').style.setProperty('--progress',pct+'%');
+      updateHome();
       document.querySelectorAll('.check').forEach(c=>c.addEventListener('change',e=>{ const id=Number(e.target.closest('.task').dataset.id); tasks.find(t=>t.id===id).done=e.target.checked; save(); render(); }));
       document.querySelectorAll('.delete').forEach(btn=>btn.addEventListener('click',e=>{ const id=Number(e.target.closest('.task').dataset.id), task=tasks.find(t=>t.id===id); if(confirm(`确定删除“${task.title}”吗？`)){ tasks=tasks.filter(t=>t.id!==id); save(); render(); } }));
       updatePip();
@@ -515,6 +679,19 @@
       if(diff<=0) return '已到时间';
       const total=Math.ceil(diff/60000), hours=Math.floor(total/60), mins=total%60;
       return hours ? `${hours} 小时 ${mins} 分钟后` : `${mins} 分钟后`;
+    }
+    function updateHome(){
+      const done = tasks.filter(t=>t.done).length, left = tasks.length-done, pct = tasks.length ? Math.round(done/tasks.length*100) : 0;
+      const task=nextTask();
+      homeFocusTitle.textContent=focus?.title || '今日重点';
+      homeFocusNote.textContent=focus?.note || '把今天最重要的事放在这里。';
+      homeNextTime.textContent=task ? task.time : '完成';
+      homeNextCountdown.textContent=task ? countdown(task) : '今天很清爽';
+      homeNextTitle.textContent=task ? task.title : '暂无待办';
+      homeNextNote.textContent=task ? (task.note || '按计划推进这项工作') : '今天的事项已经处理完，可以做一次简单复盘。';
+      homeDoneCount.textContent=done;
+      homeLeftCount.textContent=left;
+      homeProgressBar.style.width=pct+'%';
     }
     function updatePip(){
       if(!pipWindow || pipWindow.closed) return;
@@ -542,6 +719,13 @@
     }
     const now = new Date();
     document.getElementById('today').textContent = new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'}).format(now);
+    function setView(view){
+      document.body.dataset.view=view;
+      document.querySelectorAll('.bottom-nav button').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===view));
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+    document.querySelectorAll('.bottom-nav button').forEach(btn=>btn.addEventListener('click',()=>setView(btn.dataset.view)));
+    document.querySelectorAll('[data-open-view]').forEach(btn=>btn.addEventListener('click',()=>setView(btn.dataset.openView)));
     document.getElementById('openPip').onclick=openFloatingReminder;
     document.getElementById('addNote').onclick=()=>{ notes.unshift({id:Date.now(),text:''}); saveNotes(); renderNotes(); notesGrid.querySelector('textarea').focus(); };
     const focusKey='daily-plan-focus-v1', focusDefault={title:'完成核心方案，并交付可评审版本',note:'上午保持专注，先推进最需要深度思考的部分。',weeklyCalendar:{},weeklyPriorities:''};
@@ -549,7 +733,7 @@
     focus.weeklyCalendar=focus.weeklyCalendar||{};
     focus.weeklyPriorities=focus.weeklyPriorities||'';
     focusTitle.textContent=focus.title; focusNote.textContent=focus.note;
-    [focusTitle,focusNote].forEach(el=>el.addEventListener('blur',()=>{ focus={...focus,title:focusTitle.textContent.trim()||focusDefault.title,note:focusNote.textContent.trim()||focusDefault.note}; focusTitle.textContent=focus.title; focusNote.textContent=focus.note; saveFocus(); }));
+    [focusTitle,focusNote].forEach(el=>el.addEventListener('blur',()=>{ focus={...focus,title:focusTitle.textContent.trim()||focusDefault.title,note:focusNote.textContent.trim()||focusDefault.note}; focusTitle.textContent=focus.title; focusNote.textContent=focus.note; updateHome(); saveFocus(); }));
     const weekNames=['周一','周二','周三','周四','周五','周六','周日'];
     const dateKey=date=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
     function currentWeekDates(){ const base=new Date(), day=base.getDay()||7, monday=new Date(base); monday.setHours(0,0,0,0); monday.setDate(base.getDate()-day+1); return Array.from({length:7},(_,i)=>{ const date=new Date(monday); date.setDate(monday.getDate()+i); return date; }); }
@@ -570,11 +754,12 @@
     function setAuthMessage(text,ok=false){ authMessage.textContent=text; authMessage.classList.toggle('ok',ok); }
     function lockWorkspace(){ document.body.classList.add('auth-locked'); if(!authDialog.open) authDialog.showModal(); }
     function unlockWorkspace(){ document.body.classList.remove('auth-locked'); if(authDialog.open) authDialog.close(); }
-    function setSignedOut(){ currentUser=null; syncDot.classList.remove('online'); accountStatus.textContent='请登录后使用'; openAuth.hidden=false; logout.hidden=true; notesHint.textContent='登录后可在不同设备间安全同步'; lockWorkspace(); }
+    function setSignedOut(){ currentUser=null; syncDot.classList.remove('online'); accountStatus.textContent='请登录后使用'; setSaveStatus('等待登录同步',''); openAuth.hidden=false; logout.hidden=true; notesHint.textContent='登录后可在不同设备间安全同步'; lockWorkspace(); }
     async function loadUserData(user){
       currentUser=user; unlockWorkspace(); openAuth.hidden=true; logout.hidden=false; syncDot.classList.add('online'); accountStatus.textContent='正在读取云端数据…';
+      setSaveStatus('正在读取云端数据…','saving');
       const {data,error}=await supabaseClient.from('daily_plan_data').select('tasks,notes,focus').eq('user_id',user.id).maybeSingle();
-      if(error){ accountStatus.textContent='云端读取失败'; syncDot.classList.remove('online'); return; }
+      if(error){ accountStatus.textContent='云端读取失败'; syncDot.classList.remove('online'); setSaveStatus('云端读取失败，请检查网络','error'); return; }
       if(data){
         hydrating=true;
         tasks=Array.isArray(data.tasks)?data.tasks:tasks;
@@ -585,7 +770,7 @@
         focusTitle.textContent=focus.title; focusNote.textContent=focus.note; render(); renderNotes(); renderWeekly();
         hydrating=false;
       } else await saveToCloud();
-      accountStatus.textContent=`${user.email} · 已同步`; notesHint.textContent='内容已加密连接到你的账号，可在不同电脑间同步';
+      accountStatus.textContent=`${user.email} · 已同步`; setSaveStatus('已保存并同步','saved'); notesHint.textContent='内容已加密连接到你的账号，可在不同电脑间同步';
     }
     async function submitAuth(mode){
       if(!authForm.reportValidity()) return;
