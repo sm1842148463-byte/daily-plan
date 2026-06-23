@@ -18,7 +18,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
-    private static final String APP_URL = "https://sm1842148463-byte.github.io/daily-plan/";
+    private static final String APP_URL = "https://sm1842148463-byte.github.io/daily-plan/?appVersion=1.0.2";
     private WebView webView;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -40,8 +40,10 @@ public class MainActivity extends Activity {
         settings.setAllowContentAccess(false);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         WebView.setWebContentsDebuggingEnabled(false);
 
+        webView.clearCache(false);
         webView.addJavascriptInterface(new ReminderBridge(this), "AndroidReminder");
         webView.setWebViewClient(new WebViewClient() {
             @Override

@@ -41,10 +41,10 @@ jobs:
         working-directory: android
         shell: bash
         run: |
-          SIGNING_INFO="$(find "$GITHUB_WORKSPACE/signing-source" -name '签名信息-请妥善保管.txt' -print -quit)"
-          SIGNING_KEY="$(find "$GITHUB_WORKSPACE/signing-source" -name 'daily-plan-release.jks' -print -quit)"
+          SIGNING_INFO="$(find "$GITHUB_WORKSPACE/signing-source" -type f -name '*.txt' -print -quit)"
+          SIGNING_KEY="$(find "$GITHUB_WORKSPACE/signing-source" -type f -name 'daily-plan-release.jks' -print -quit)"
           test -n "$SIGNING_INFO" && test -n "$SIGNING_KEY"
-          SIGNING_PASSWORD="$(sed -n 's/^证书密码：//p' "$SIGNING_INFO" | head -n 1)"
+          SIGNING_PASSWORD="$(grep -oE '[0-9a-f]{64}' "$SIGNING_INFO" | head -n 1)"
           test -n "$SIGNING_PASSWORD"
           echo "::add-mask::$SIGNING_PASSWORD"
           cp "$SIGNING_KEY" daily-plan-release.jks
@@ -53,7 +53,6 @@ jobs:
           echo "DAILY_PLAN_KEY_PASSWORD=$SIGNING_PASSWORD" >> "$GITHUB_ENV"
           echo "DAILY_PLAN_KEY_ALIAS=dailyplan" >> "$GITHUB_ENV"
           mkdir -p "$GITHUB_WORKSPACE/release-output"
-          cp "$SIGNING_INFO" "$GITHUB_WORKSPACE/release-output/签名信息-请妥善保管.txt"
 
       - name: Build signed release APK
         working-directory: android
@@ -62,13 +61,12 @@ jobs:
       - name: Package release files
         shell: bash
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk release-output/今日工作安排-v1.0.1.apk
-          cp android/daily-plan-release.jks release-output/daily-plan-release.jks
-          sha256sum release-output/今日工作安排-v1.0.1.apk > release-output/SHA256.txt
+          cp android/app/build/outputs/apk/release/app-release.apk release-output/daily-plan-v1.0.2.apk
+          sha256sum release-output/daily-plan-v1.0.2.apk > release-output/SHA256.txt
 
       - name: Upload signed release package
         uses: actions/upload-artifact@v4
         with:
-          name: daily-plan-release-v1.0.1
+          name: daily-plan-release-v1.0.2
           path: release-output/*
           if-no-files-found: error
