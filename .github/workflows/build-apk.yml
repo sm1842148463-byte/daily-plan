@@ -41,10 +41,16 @@ jobs:
         working-directory: android
         shell: bash
         run: |
-          SIGNING_INFO="$(find "$GITHUB_WORKSPACE/signing-source" -name '绛惧悕淇℃伅-璇峰Ε鍠勪繚绠?txt' -print -quit)"
-          SIGNING_KEY="$(find "$GITHUB_WORKSPACE/signing-source" -name 'daily-plan-release.jks' -print -quit)"
+          SIGNING_INFO="$(find "$GITHUB_WORKSPACE/signing-source" -type f ! -name 'daily-plan-release.jks' ! -name 'SHA256.txt' -print -quit)"
+          SIGNING_KEY="$(find "$GITHUB_WORKSPACE/signing-source" -type f -name 'daily-plan-release.jks' -print -quit)"
           test -n "$SIGNING_INFO" && test -n "$SIGNING_KEY"
-          SIGNING_PASSWORD="$(sed -n 's/^璇佷功瀵嗙爜锛?/p' "$SIGNING_INFO" | head -n 1)"
+          SIGNING_PASSWORD="$(python3 - "$SIGNING_INFO" <<'PY'
+          import re, sys
+          data = open(sys.argv[1], 'rb').read().decode('utf-8', 'ignore')
+          match = re.search(r'[0-9a-f]{64}', data)
+          print(match.group(0) if match else '')
+          PY
+          )"
           test -n "$SIGNING_PASSWORD"
           echo "::add-mask::$SIGNING_PASSWORD"
           cp "$SIGNING_KEY" daily-plan-release.jks
