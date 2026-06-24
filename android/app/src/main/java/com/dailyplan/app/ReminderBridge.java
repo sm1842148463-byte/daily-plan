@@ -17,6 +17,12 @@ public class ReminderBridge {
 
     @JavascriptInterface
     public String getAppVersion() {
-        return BuildConfig.VERSION_NAME;
+        try {
+            return context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0)
+                    .versionName;
+        } catch (Exception ignored) {
+            return "";
+        }
     }
 }
