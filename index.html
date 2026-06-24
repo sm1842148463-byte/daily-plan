@@ -78,6 +78,12 @@
     .anniversary-delete { width:28px; height:28px; border:0; border-radius:50%; background:rgba(255,255,255,.66); color:#9aa39d; cursor:pointer; font-size:16px; }
     .anniversary-empty { color:var(--muted); font-size:13px; line-height:1.6; padding:10px 2px; }
     .bottom-nav { display:none; }
+    .profile-panel { display:none; margin-top:22px; padding:28px; }
+    .profile-card { display:grid; gap:14px; }
+    .profile-row { display:flex; justify-content:space-between; gap:16px; padding:14px 0; border-bottom:1px solid var(--line); color:var(--muted); font-size:13px; }
+    .profile-row strong { color:var(--ink); text-align:right; word-break:break-all; }
+    .profile-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
+    .profile-actions button { width:100%; }
     .layout { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(280px,.8fr); gap:22px; }
     .panel { background:var(--card); border:1px solid rgba(255,255,255,.8); border-radius:26px; box-shadow:var(--shadow); backdrop-filter:blur(16px); }
     .schedule { padding:28px; }
@@ -307,23 +313,39 @@
       body[data-view="home"] .tomorrow-panel,
       body[data-view="home"] .weekly-panel,
       body[data-view="home"] .notes-panel,
+      body[data-view="home"] .profile-panel,
       body[data-view="today"] .home-panel,
       body[data-view="today"] .weekly-panel,
       body[data-view="today"] .notes-panel,
+      body[data-view="today"] .tomorrow-panel,
+      body[data-view="today"] .profile-panel,
+      body[data-view="tomorrow"] .home-panel,
+      body[data-view="tomorrow"] .layout,
+      body[data-view="tomorrow"] .weekly-panel,
+      body[data-view="tomorrow"] .notes-panel,
+      body[data-view="tomorrow"] .profile-panel,
       body[data-view="week"] .home-panel,
       body[data-view="week"] .layout,
       body[data-view="week"] .tomorrow-panel,
       body[data-view="week"] .notes-panel,
+      body[data-view="week"] .profile-panel,
       body[data-view="notes"] .home-panel,
       body[data-view="notes"] .layout,
       body[data-view="notes"] .tomorrow-panel,
-      body[data-view="notes"] .weekly-panel {
+      body[data-view="notes"] .weekly-panel,
+      body[data-view="notes"] .profile-panel,
+      body[data-view="profile"] .home-panel,
+      body[data-view="profile"] .layout,
+      body[data-view="profile"] .tomorrow-panel,
+      body[data-view="profile"] .weekly-panel,
+      body[data-view="profile"] .notes-panel {
         display:none;
       }
       body[data-view="today"] .layout,
-      body[data-view="today"] .tomorrow-panel,
+      body[data-view="tomorrow"] .tomorrow-panel,
       body[data-view="week"] .weekly-panel,
-      body[data-view="notes"] .notes-panel {
+      body[data-view="notes"] .notes-panel,
+      body[data-view="profile"] .profile-panel {
         display:block;
       }
       .bottom-nav {
@@ -333,7 +355,7 @@
         bottom:calc(10px + env(safe-area-inset-bottom));
         z-index:20;
         display:grid;
-        grid-template-columns:repeat(4,1fr);
+        grid-template-columns:repeat(6,1fr);
         gap:5px;
         padding:7px;
         border:1px solid rgba(255,255,255,.75);
@@ -350,6 +372,20 @@
         color:var(--muted);
         font-weight:800;
         font-size:12px;
+      }
+      .profile-panel {
+        padding:16px;
+      }
+      .profile-row {
+        display:grid;
+        gap:5px;
+        padding:12px 0;
+      }
+      .profile-row strong {
+        text-align:left;
+      }
+      .profile-actions {
+        grid-template-columns:1fr;
       }
       .bottom-nav button.active {
         background:var(--green);
@@ -673,13 +709,27 @@
       <div class="notes-head"><div><h2>随手便签</h2><p id="notesHint">想到什么就写下来，登录后可在不同电脑间同步</p></div><button class="add" id="addNote">＋ 新建便签</button></div>
       <div class="notes-grid" id="notesGrid"></div>
     </section>
+    <section class="panel profile-panel">
+      <div class="notes-head"><div><h2>我的</h2><p>账号、同步状态和常用操作集中放在这里</p></div></div>
+      <div class="profile-card">
+        <div class="profile-row"><span>当前账号</span><strong id="profileEmail">未登录</strong></div>
+        <div class="profile-row"><span>数据同步</span><strong id="profileSync">等待登录同步</strong></div>
+        <div class="profile-row"><span>使用说明</span><strong>今日、明日、本周和便签会跟随账号保存</strong></div>
+        <div class="profile-actions">
+          <button class="add" type="button" id="profileOpenAuth">登录 / 注册</button>
+          <button class="ghost" type="button" id="profileLogout" hidden>退出登录</button>
+        </div>
+      </div>
+    </section>
   </main>
 
   <nav class="bottom-nav" aria-label="手机底部导航">
     <button type="button" class="active" data-view="home">首页</button>
     <button type="button" data-view="today">今日</button>
+    <button type="button" data-view="tomorrow">明日</button>
     <button type="button" data-view="week">本周</button>
     <button type="button" data-view="notes">便签</button>
+    <button type="button" data-view="profile">我的</button>
   </nav>
 
   <dialog id="taskDialog">
@@ -733,6 +783,8 @@
     function setSaveStatus(text,state='saved'){
       saveStatus.textContent=text;
       saveStatus.className=`save-status ${state}`;
+      const profileSyncEl=document.getElementById('profileSync');
+      if(profileSyncEl) profileSyncEl.textContent=text;
     }
     function queueCloudSave(){
       if(hydrating) return;
@@ -965,15 +1017,22 @@
     document.getElementById('cancelDialog').onclick=()=>dialog.close();
     document.getElementById('taskForm').onsubmit=e=>{e.preventDefault(); tasks.push({id:Date.now(),time:taskTime.value,title:taskTitle.value.trim(),note:taskNote.value.trim(),type:taskType.value,done:false}); save(); render(); e.target.reset(); dialog.close();};
     const authDialog=document.getElementById('authDialog'), authForm=document.getElementById('authForm'), authMessage=document.getElementById('authMessage');
+    const profileEmail=document.getElementById('profileEmail'), profileSync=document.getElementById('profileSync'), profileOpenAuth=document.getElementById('profileOpenAuth'), profileLogout=document.getElementById('profileLogout');
     function setAuthMessage(text,ok=false){ authMessage.textContent=text; authMessage.classList.toggle('ok',ok); }
     function lockWorkspace(){ document.body.classList.add('auth-locked'); if(!authDialog.open) authDialog.showModal(); }
     function unlockWorkspace(){ document.body.classList.remove('auth-locked'); if(authDialog.open) authDialog.close(); }
-    function setSignedOut(){ currentUser=null; syncDot.classList.remove('online'); accountStatus.textContent='请登录后使用'; setSaveStatus('等待登录同步',''); openAuth.hidden=false; logout.hidden=true; notesHint.textContent='登录后可在不同设备间安全同步'; lockWorkspace(); }
+    function setSignedOut(){
+      currentUser=null; syncDot.classList.remove('online'); accountStatus.textContent='请登录后使用'; setSaveStatus('等待登录同步','');
+      openAuth.hidden=false; logout.hidden=true; profileOpenAuth.hidden=false; profileLogout.hidden=true;
+      profileEmail.textContent='未登录'; profileSync.textContent='等待登录同步';
+      notesHint.textContent='登录后可在不同设备间安全同步'; lockWorkspace();
+    }
     async function loadUserData(user){
-      currentUser=user; unlockWorkspace(); openAuth.hidden=true; logout.hidden=false; syncDot.classList.add('online'); accountStatus.textContent='正在读取云端数据…';
+      currentUser=user; unlockWorkspace(); openAuth.hidden=true; logout.hidden=false; profileOpenAuth.hidden=true; profileLogout.hidden=false; syncDot.classList.add('online'); accountStatus.textContent='正在读取云端数据…';
+      profileEmail.textContent=user.email || '已登录账号'; profileSync.textContent='正在读取云端数据…';
       setSaveStatus('正在读取云端数据…','saving');
       const {data,error}=await supabaseClient.from('daily_plan_data').select('tasks,notes,focus').eq('user_id',user.id).maybeSingle();
-      if(error){ accountStatus.textContent='云端读取失败'; syncDot.classList.remove('online'); setSaveStatus('云端读取失败，请检查网络','error'); return; }
+      if(error){ accountStatus.textContent='云端读取失败'; profileSync.textContent='云端读取失败'; syncDot.classList.remove('online'); setSaveStatus('云端读取失败，请检查网络','error'); return; }
       if(data){
         hydrating=true;
         tasks=Array.isArray(data.tasks)?data.tasks:tasks;
@@ -988,7 +1047,7 @@
         hydrating=false;
         if(rolled) await saveToCloud();
       } else await saveToCloud();
-      accountStatus.textContent=`${user.email} · 已同步`; setSaveStatus('已保存并同步','saved'); notesHint.textContent='内容已加密连接到你的账号，可在不同电脑间同步';
+      accountStatus.textContent=`${user.email} · 已同步`; profileSync.textContent='已保存并同步'; setSaveStatus('已保存并同步','saved'); notesHint.textContent='内容已加密连接到你的账号，可在不同电脑间同步';
     }
     async function submitAuth(mode){
       if(!authForm.reportValidity()) return;
@@ -1002,11 +1061,13 @@
       unlockWorkspace(); authForm.reset(); setAuthMessage('');
     }
     openAuth.onclick=()=>{ setAuthMessage(''); authDialog.showModal(); };
+    profileOpenAuth.onclick=()=>{ setAuthMessage(''); authDialog.showModal(); };
     authDialog.addEventListener('cancel',e=>{ if(!currentUser) e.preventDefault(); });
     lockWorkspace();
     authForm.onsubmit=e=>{ e.preventDefault(); submitAuth('login'); };
     register.onclick=()=>submitAuth('register');
     logout.onclick=async()=>{ await supabaseClient.auth.signOut(); setSignedOut(); };
+    profileLogout.onclick=async()=>{ await supabaseClient.auth.signOut(); setSignedOut(); };
     supabaseClient.auth.onAuthStateChange((_event,session)=>{ if(session?.user){ if(currentUser?.id!==session.user.id) setTimeout(()=>loadUserData(session.user),0); } else setSignedOut(); });
     supabaseClient.auth.getSession().then(({data})=>{ if(data.session?.user) loadUserData(data.session.user); else setSignedOut(); });
     setInterval(updatePip,1000);
