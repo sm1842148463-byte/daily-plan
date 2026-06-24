@@ -5,12 +5,13 @@ on:
   push:
     paths:
       - "android/**"
+      - ".github/workflows/build-apk.yml"
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout source
@@ -63,3 +64,16 @@ jobs:
           name: daily-plan-release-v1.0.3
           path: release-output/*
           if-no-files-found: error
+
+      - name: Publish GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v1.0.3 >/dev/null 2>&1; then
+            gh release upload v1.0.3 release-output/daily-plan-v1.0.3.apk release-output/SHA256.txt --clobber
+          else
+            gh release create v1.0.3 release-output/daily-plan-v1.0.3.apk release-output/SHA256.txt \
+              --title "今日工作安排 v1.0.3" \
+              --notes "手机端界面二次整理，并增强 Android 原生通知提醒。"
+          fi
