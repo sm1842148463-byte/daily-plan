@@ -14,6 +14,8 @@ public class AlarmReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         ReminderScheduler.createNotificationChannel(context);
         int notificationId = intent.getIntExtra("notification_id", (int) System.currentTimeMillis());
+        String body = intent.getStringExtra("body");
+        if (body == null || body.trim().isEmpty()) body = "该处理这项工作了";
         Intent openApp = new Intent(context, MainActivity.class)
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent contentIntent = PendingIntent.getActivity(
@@ -29,11 +31,14 @@ public class AlarmReceiver extends BroadcastReceiver {
         notification
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(intent.getStringExtra("title"))
-                .setContentText(intent.getStringExtra("time") + " · 该处理这项工作了")
+                .setContentText(intent.getStringExtra("time") + " · " + body)
                 .setPriority(Notification.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .setContentIntent(contentIntent);
 
         context.getSystemService(NotificationManager.class).notify(notificationId, notification.build());
+        if (intent.getBooleanExtra("daily", false)) {
+            ReminderScheduler.restore(context);
+        }
     }
 }

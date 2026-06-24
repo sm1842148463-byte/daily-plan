@@ -85,7 +85,12 @@
     .profile-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
     .profile-actions button { width:100%; }
     .profile-block { margin-top:18px; padding-top:18px; border-top:1px solid var(--line); }
+    details.profile-block summary { list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+    details.profile-block summary::-webkit-details-marker { display:none; }
+    details.profile-block summary::after { content:"展开"; color:var(--muted); font-size:12px; font-weight:700; }
+    details.profile-block[open] summary::after { content:"收起"; }
     .profile-block h3 { margin:0 0 10px; font-size:15px; }
+    details.profile-block summary h3 { margin:0 0 4px; }
     .profile-block p { margin:0 0 12px; color:var(--muted); font-size:12px; line-height:1.6; }
     .setting-grid { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; }
     .history-list { display:flex; flex-direction:column; gap:10px; max-height:360px; overflow:auto; padding-right:2px; }
@@ -771,7 +776,7 @@
         <aside class="weekly-focus"><h3>本周重点工作</h3><p>写下这一周最需要推进的事项</p><textarea id="weeklyFocus" aria-label="编辑本周重点工作" placeholder="例如：&#10;1. 完成核心方案&#10;2. 推进客户确认&#10;3. 做好周五复盘"></textarea></aside>
       </div>
       <section class="weekly-report">
-        <div class="notes-head"><div><h3>周报草稿</h3><p>根据本周日历、历史记录和复盘自动生成，可直接复制修改。</p></div><button class="ghost" type="button" id="generateWeeklyReport">生成周报</button></div>
+        <div class="notes-head"><div><h3>周报草稿</h3><p>根据本周日历、历史记录和复盘自动生成。</p></div><button class="ghost" type="button" id="generateWeeklyReport">生成周报</button></div>
         <textarea id="weeklyReport" placeholder="点击“生成周报”，这里会自动整理本周完成事项、问题和下周计划。"></textarea>
       </section>
     </section>
@@ -801,8 +806,8 @@
             <button class="ghost" type="button" id="clearLocalCache">清除本机缓存</button>
           </div>
         </div>
-        <div class="profile-block">
-          <h3>重复任务</h3>
+        <details class="profile-block">
+          <summary><div><h3>重复任务</h3><p>每天/每周固定做的事，点开后管理。</p></div></summary>
           <p>适合每天/每周固定做的事。生成后会加入今日或明日安排。</p>
           <div class="repeat-form">
             <input id="repeatTime" type="time" value="09:00" aria-label="重复任务时间">
@@ -812,18 +817,18 @@
             <button class="add" type="button" id="addRepeatTask">添加</button>
           </div>
           <div class="repeat-list" id="repeatList"></div>
-        </div>
-        <div class="profile-block">
-          <h3>全局搜索</h3>
+        </details>
+        <details class="profile-block">
+          <summary><div><h3>全局搜索</h3><p>搜索任务、便签、历史和复盘。</p></div></summary>
           <p>搜索今日/明日任务、便签、历史记录和复盘。</p>
           <input id="globalSearch" placeholder="输入关键词，例如：客户、周报、会议">
           <div class="search-results" id="searchResults"></div>
-        </div>
-        <div class="profile-block">
-          <h3>历史记录</h3>
+        </details>
+        <details class="profile-block">
+          <summary><div><h3>历史记录</h3><p>查看归档后的每日安排。</p></div></summary>
           <p>归档后的每日安排会显示在这里，方便写周报和回头看。</p>
           <div class="history-list" id="historyList"></div>
-        </div>
+        </details>
         <div class="profile-actions">
           <button class="add" type="button" id="profileOpenAuth">登录 / 注册</button>
           <button class="ghost" type="button" id="profileLogout" hidden>退出登录</button>
@@ -965,7 +970,7 @@
     }
     function syncNativeReminders(){
       if(window.AndroidReminder && typeof window.AndroidReminder.syncTasks==='function'){
-        try{ window.AndroidReminder.syncTasks(JSON.stringify(tasks)); }catch(error){ console.warn('原生提醒同步失败',error); }
+        try{ window.AndroidReminder.syncTasks(JSON.stringify({tasks,notifications:focus.settings?.notifications!=='off'})); }catch(error){ console.warn('原生提醒同步失败',error); }
       }
     }
     function taskMoment(task){ const [hour,minute]=task.time.split(':').map(Number), moment=new Date(); moment.setHours(hour,minute,0,0); return moment; }

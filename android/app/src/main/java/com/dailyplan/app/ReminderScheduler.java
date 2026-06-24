@@ -21,6 +21,8 @@ public final class ReminderScheduler {
     private static final String PREFS = "daily_plan_native_reminders";
     private static final String TASKS_JSON = "tasks_json";
     private static final String REQUEST_CODES = "request_codes";
+    private static final int MORNING_REQUEST_CODE = 820001;
+    private static final int REVIEW_REQUEST_CODE = 213001;
 
     private ReminderScheduler() {
     }
@@ -60,7 +62,21 @@ public final class ReminderScheduler {
 
         Set<String> newCodes = new HashSet<>();
         try {
-            JSONArray tasks = new JSONArray(tasksJson);
+            JSONArray tasks;
+            boolean notificationsEnabled = true;
+            String trimmed = tasksJson == null ? "[]" : tasksJson.trim();
+            if (trimmed.startsWith("{")) {
+                JSONObject payload = new JSONObject(trimmed);
+                notificationsEnabled = payload.optBoolean("notifications", true);
+                tasks = payload.optJSONArray("tasks");
+                if (tasks == null) tasks = new JSONArray();
+            } else {
+                tasks = new JSONArray(trimmed);
+            }
+            if (!notificationsEnabled) {
+                prefs.edit().putStringSet(REQUEST_CODES, newCodes).apply();
+                return;
+            }
             long now = System.currentTimeMillis();
             for (int i = 0; i < tasks.length(); i++) {
                 JSONObject task = tasks.getJSONObject(i);
@@ -77,28 +93,58 @@ public final class ReminderScheduler {
                 if (due.getTimeInMillis() <= now) continue;
 
                 long taskId = task.optLong("id", i + 1L);
-                int requestCode = (int) (taskId ^ (taskId >>> 32));
+                int requestCode = requestCodeForTask(taskId);
                 Intent intent = new Intent(context, AlarmReceiver.class)
                         .putExtra("title", task.optString("title", "日程提醒"))
                         .putExtra("time", time)
+                        .putExtra("body", "该处理这项工作了")
                         .putExtra("notification_id", requestCode);
-                PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                        context,
-                        requestCode,
-                        intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                );
-
-                if (Build.VERSION.SDK_INT < 31 || alarmManager.canScheduleExactAlarms()) {
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, due.getTimeInMillis(), pendingIntent);
-                } else {
-                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, due.getTimeInMillis(), pendingIntent);
-                }
+                scheduleAlarm(context, alarmManager, requestCode, due.getTimeInMillis(), intent);
                 newCodes.add(String.valueOf(requestCode));
             }
+            scheduleDailyNudge(context, alarmManager, MORNING_REQUEST_CODE, 8, 30, "查看今日安排", "早上好，先看一眼今天最重要的事");
+            scheduleDailyNudge(context, alarmManager, REVIEW_REQUEST_CODE, 21, 30, "填写今日复盘", "花一分钟收尾，顺手安排明天第一件事");
+            newCodes.add(String.valueOf(MORNING_REQUEST_CODE));
+            newCodes.add(String.valueOf(REVIEW_REQUEST_CODE));
         } catch (Exception ignored) {
         }
         prefs.edit().putStringSet(REQUEST_CODES, newCodes).apply();
+    }
+
+    private static int requestCodeForTask(long taskId) {
+        return 100000 + Math.abs((int) (taskId ^ (taskId >>> 32)));
+    }
+
+    private static void scheduleDailyNudge(Context context, AlarmManager alarmManager, int requestCode, int hour, int minute, String title, String body) {
+        Calendar due = Calendar.getInstance();
+        due.set(Calendar.HOUR_OF_DAY, hour);
+        due.set(Calendar.MINUTE, minute);
+        due.set(Calendar.SECOND, 0);
+        due.set(Calendar.MILLISECOND, 0);
+        if (due.getTimeInMillis() <= System.currentTimeMillis()) {
+            due.add(Calendar.DAY_OF_YEAR, 1);
+        }
+        Intent intent = new Intent(context, AlarmReceiver.class)
+                .putExtra("title", title)
+                .putExtra("time", String.format("%02d:%02d", hour, minute))
+                .putExtra("body", body)
+                .putExtra("daily", true)
+                .putExtra("notification_id", requestCode);
+        scheduleAlarm(context, alarmManager, requestCode, due.getTimeInMillis(), intent);
+    }
+
+    private static void scheduleAlarm(Context context, AlarmManager alarmManager, int requestCode, long triggerAtMillis, Intent intent) {
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                context,
+                requestCode,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        if (Build.VERSION.SDK_INT < 31 || alarmManager.canScheduleExactAlarms()) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+        } else {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+        }
     }
 
     private static void cancelAlarm(Context context, AlarmManager alarmManager, int requestCode) {

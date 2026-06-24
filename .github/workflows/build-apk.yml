@@ -54,12 +54,12 @@ jobs:
       - name: Package release files
         shell: bash
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk release-output/daily-plan-v1.0.2.apk
-          sha256sum release-output/daily-plan-v1.0.2.apk > release-output/SHA256.txt
+          cp android/app/build/outputs/apk/release/app-release.apk release-output/daily-plan-v1.0.3.apk
+          sha256sum release-output/daily-plan-v1.0.3.apk > release-output/SHA256.txt
 
       - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: daily-plan-release-v1.0.2
+          name: daily-plan-release-v1.0.3
           path: release-output/*
           if-no-files-found: error
