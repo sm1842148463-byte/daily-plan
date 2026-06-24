@@ -55,13 +55,13 @@ jobs:
       - name: Package release files
         shell: bash
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk release-output/daily-plan-v1.0.3.apk
-          sha256sum release-output/daily-plan-v1.0.3.apk > release-output/SHA256.txt
+          cp android/app/build/outputs/apk/release/app-release.apk release-output/daily-plan-v1.0.4.apk
+          sha256sum release-output/daily-plan-v1.0.4.apk > release-output/SHA256.txt
 
       - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: daily-plan-release-v1.0.3
+          name: daily-plan-release-v1.0.4
           path: release-output/*
           if-no-files-found: error
 
@@ -70,10 +70,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v1.0.3 >/dev/null 2>&1; then
-            gh release upload v1.0.3 release-output/daily-plan-v1.0.3.apk release-output/SHA256.txt --clobber
+          if gh release view v1.0.4 >/dev/null 2>&1; then
+            gh release upload v1.0.4 release-output/daily-plan-v1.0.4.apk release-output/SHA256.txt --clobber
           else
-            gh release create v1.0.3 release-output/daily-plan-v1.0.3.apk release-output/SHA256.txt \
-              --title "今日工作安排 v1.0.3" \
-              --notes "手机端界面二次整理，并增强 Android 原生通知提醒。"
+            gh release create v1.0.4 release-output/daily-plan-v1.0.4.apk release-output/SHA256.txt \
+              --title "今日工作安排 v1.0.4" \
+              --notes "早上查看今日、晚上填写复盘提醒改为可选，并支持自定义提醒时间。"
           fi

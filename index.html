@@ -795,12 +795,20 @@
       <div class="profile-card">
         <div class="profile-row"><span>当前账号</span><strong id="profileEmail">未登录</strong></div>
         <div class="profile-row"><span>数据同步</span><strong id="profileSync">等待登录同步</strong></div>
-        <div class="profile-row"><span>当前版本</span><strong>APP v1.0.3 / Web 2026.06.24</strong></div>
+        <div class="profile-row"><span>当前版本</span><strong>APP v1.0.4 / Web 2026.06.24</strong></div>
         <div class="profile-row"><span>使用说明</span><strong>今日、明日、本周和便签会跟随账号保存</strong></div>
         <details class="profile-block" open>
           <summary><div><h3>版本信息与更新内容</h3><p>查看当前安装包版本、补丁内容和下载入口。</p></div></summary>
-          <div class="profile-row"><span>最新安装包</span><strong><a class="version-link" href="https://github.com/sm1842148463-byte/daily-plan/releases/download/v1.0.3/daily-plan-v1.0.3.apk" target="_blank" rel="noopener">下载 v1.0.3</a></strong></div>
+          <div class="profile-row"><span>最新安装包</span><strong><a class="version-link" href="https://github.com/sm1842148463-byte/daily-plan/releases/download/v1.0.4/daily-plan-v1.0.4.apk" target="_blank" rel="noopener">下载 v1.0.4</a></strong></div>
           <div class="changelog-list">
+            <article class="changelog-item">
+              <h4>v1.0.4 · 提醒设置可自定义</h4>
+              <ul>
+                <li>早上查看今日、晚上填写复盘提醒改为可选，不再强制开启。</li>
+                <li>支持分别选择早上提醒时间和晚上复盘提醒时间。</li>
+                <li>关闭总提醒开关后，网页提醒和 APP 原生提醒都会停止。</li>
+              </ul>
+            </article>
             <article class="changelog-item">
               <h4>v1.0.3 · 手机端界面与原生提醒增强</h4>
               <ul>
@@ -830,6 +838,14 @@
           <div class="setting-grid" style="margin-top:10px">
             <select id="notifySetting" aria-label="提醒偏好"><option value="on">开启网页提醒</option><option value="off">关闭网页提醒</option></select>
             <button class="ghost" type="button" id="resetPassword">发送重置密码邮件</button>
+          </div>
+          <div class="setting-grid" style="margin-top:10px">
+            <label><input id="morningReminderEnabled" type="checkbox"> 早上查看今日提醒</label>
+            <input id="morningReminderTime" type="time" value="08:30" aria-label="早上提醒时间">
+          </div>
+          <div class="setting-grid" style="margin-top:10px">
+            <label><input id="reviewReminderEnabled" type="checkbox"> 晚上填写复盘提醒</label>
+            <input id="reviewReminderTime" type="time" value="21:30" aria-label="晚上复盘提醒时间">
           </div>
           <div class="setting-grid" style="margin-top:10px">
             <button class="ghost" type="button" id="exportData">导出数据备份</button>
@@ -1000,7 +1016,7 @@
     }
     function syncNativeReminders(){
       if(window.AndroidReminder && typeof window.AndroidReminder.syncTasks==='function'){
-        try{ window.AndroidReminder.syncTasks(JSON.stringify({tasks,notifications:focus.settings?.notifications!=='off'})); }catch(error){ console.warn('原生提醒同步失败',error); }
+        try{ window.AndroidReminder.syncTasks(JSON.stringify({tasks,settings:focus.settings||{},notifications:focus.settings?.notifications!=='off'})); }catch(error){ console.warn('原生提醒同步失败',error); }
       }
     }
     function taskMoment(task){ const [hour,minute]=task.time.split(':').map(Number), moment=new Date(); moment.setHours(hour,minute,0,0); return moment; }
@@ -1117,7 +1133,7 @@
       anniversaryForm.reset();
     };
     const localDateKey=date=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-    const focusKey='daily-plan-focus-v1', focusDefault={title:'完成核心方案，并交付可评审版本',note:'上午保持专注，先推进最需要深度思考的部分。',weeklyCalendar:{},weeklyPriorities:'',anniversaries:[],tomorrowTasks:[],planDate:'',dailyReviews:{},history:[],repeatTasks:[],weeklyReport:'',settings:{name:'',notifications:'on'}};
+    const focusKey='daily-plan-focus-v1', focusDefault={title:'完成核心方案，并交付可评审版本',note:'上午保持专注，先推进最需要深度思考的部分。',weeklyCalendar:{},weeklyPriorities:'',anniversaries:[],tomorrowTasks:[],planDate:'',dailyReviews:{},history:[],repeatTasks:[],weeklyReport:'',settings:{name:'',notifications:'on',morningReminder:false,morningTime:'08:30',reviewReminder:false,reviewTime:'21:30'}};
     let focus={...focusDefault,...(JSON.parse(localStorage.getItem(focusKey)||'null')||{})};
     focus.weeklyCalendar=focus.weeklyCalendar||{};
     focus.weeklyPriorities=focus.weeklyPriorities||'';
@@ -1180,6 +1196,10 @@
     function updateSettingsUI(){
       profileName.value=focus.settings?.name||'';
       notifySetting.value=focus.settings?.notifications||'on';
+      morningReminderEnabled.checked=!!focus.settings?.morningReminder;
+      morningReminderTime.value=focus.settings?.morningTime||'08:30';
+      reviewReminderEnabled.checked=!!focus.settings?.reviewReminder;
+      reviewReminderTime.value=focus.settings?.reviewTime||'21:30';
     }
     function addTaskToTomorrow(task){
       focus.tomorrowTasks=Array.isArray(focus.tomorrowTasks)?focus.tomorrowTasks:[];
@@ -1392,8 +1412,19 @@
     }
     openAuth.onclick=()=>{ setAuthMessage(''); authDialog.showModal(); };
     profileOpenAuth.onclick=()=>{ setAuthMessage(''); authDialog.showModal(); };
-    saveProfileSettings.onclick=()=>{ focus.settings={...focus.settings,name:profileName.value.trim(),notifications:notifySetting.value}; saveFocus(); alert('设置已保存'); };
-    notifySetting.onchange=()=>{ focus.settings={...focus.settings,notifications:notifySetting.value}; saveFocus(); };
+    function collectReminderSettings(){
+      focus.settings={
+        ...focus.settings,
+        name:profileName.value.trim(),
+        notifications:notifySetting.value,
+        morningReminder:morningReminderEnabled.checked,
+        morningTime:morningReminderTime.value||'08:30',
+        reviewReminder:reviewReminderEnabled.checked,
+        reviewTime:reviewReminderTime.value||'21:30'
+      };
+    }
+    saveProfileSettings.onclick=()=>{ collectReminderSettings(); saveFocus(); syncNativeReminders(); alert('设置已保存'); };
+    [notifySetting,morningReminderEnabled,morningReminderTime,reviewReminderEnabled,reviewReminderTime].forEach(el=>el.addEventListener('change',()=>{ collectReminderSettings(); saveFocus(); syncNativeReminders(); }));
     resetPassword.onclick=async()=>{
       const email=currentUser?.email || authEmail.value.trim();
       if(!email){ alert('请先登录，或在登录框里填写邮箱'); return; }

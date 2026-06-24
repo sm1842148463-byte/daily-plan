@@ -64,10 +64,12 @@ public final class ReminderScheduler {
         try {
             JSONArray tasks;
             boolean notificationsEnabled = true;
+            JSONObject settings = null;
             String trimmed = tasksJson == null ? "[]" : tasksJson.trim();
             if (trimmed.startsWith("{")) {
                 JSONObject payload = new JSONObject(trimmed);
                 notificationsEnabled = payload.optBoolean("notifications", true);
+                settings = payload.optJSONObject("settings");
                 tasks = payload.optJSONArray("tasks");
                 if (tasks == null) tasks = new JSONArray();
             } else {
@@ -102,10 +104,16 @@ public final class ReminderScheduler {
                 scheduleAlarm(context, alarmManager, requestCode, due.getTimeInMillis(), intent);
                 newCodes.add(String.valueOf(requestCode));
             }
-            scheduleDailyNudge(context, alarmManager, MORNING_REQUEST_CODE, 8, 30, "查看今日安排", "早上好，先看一眼今天最重要的事");
-            scheduleDailyNudge(context, alarmManager, REVIEW_REQUEST_CODE, 21, 30, "填写今日复盘", "花一分钟收尾，顺手安排明天第一件事");
-            newCodes.add(String.valueOf(MORNING_REQUEST_CODE));
-            newCodes.add(String.valueOf(REVIEW_REQUEST_CODE));
+            if (settings != null && settings.optBoolean("morningReminder", false)) {
+                int[] time = parseTime(settings.optString("morningTime", "08:30"), 8, 30);
+                scheduleDailyNudge(context, alarmManager, MORNING_REQUEST_CODE, time[0], time[1], "查看今日安排", "早上好，先看一眼今天最重要的事");
+                newCodes.add(String.valueOf(MORNING_REQUEST_CODE));
+            }
+            if (settings != null && settings.optBoolean("reviewReminder", false)) {
+                int[] time = parseTime(settings.optString("reviewTime", "21:30"), 21, 30);
+                scheduleDailyNudge(context, alarmManager, REVIEW_REQUEST_CODE, time[0], time[1], "填写今日复盘", "花一分钟收尾，顺手安排明天第一件事");
+                newCodes.add(String.valueOf(REVIEW_REQUEST_CODE));
+            }
         } catch (Exception ignored) {
         }
         prefs.edit().putStringSet(REQUEST_CODES, newCodes).apply();
@@ -113,6 +121,19 @@ public final class ReminderScheduler {
 
     private static int requestCodeForTask(long taskId) {
         return 100000 + Math.abs((int) (taskId ^ (taskId >>> 32)));
+    }
+
+    private static int[] parseTime(String value, int fallbackHour, int fallbackMinute) {
+        try {
+            String[] parts = value.split(":");
+            int hour = Integer.parseInt(parts[0]);
+            int minute = Integer.parseInt(parts[1]);
+            if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+                return new int[]{hour, minute};
+            }
+        } catch (Exception ignored) {
+        }
+        return new int[]{fallbackHour, fallbackMinute};
     }
 
     private static void scheduleDailyNudge(Context context, AlarmManager alarmManager, int requestCode, int hour, int minute, String title, String body) {

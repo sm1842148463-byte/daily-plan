@@ -18,7 +18,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
-    private static final String APP_URL = "https://sm1842148463-byte.github.io/daily-plan/?appVersion=1.0.2-20260624-ui-native-reminders";
+    private static final String APP_URL = "https://sm1842148463-byte.github.io/daily-plan/?appVersion=1.0.4-20260624-reminder-settings";
     private WebView webView;
 
     @SuppressLint("SetJavaScriptEnabled")
