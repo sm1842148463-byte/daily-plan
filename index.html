@@ -84,6 +84,16 @@
     .profile-row strong { color:var(--ink); text-align:right; word-break:break-all; }
     .profile-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
     .profile-actions button { width:100%; }
+    .profile-block { margin-top:18px; padding-top:18px; border-top:1px solid var(--line); }
+    .profile-block h3 { margin:0 0 10px; font-size:15px; }
+    .profile-block p { margin:0 0 12px; color:var(--muted); font-size:12px; line-height:1.6; }
+    .setting-grid { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; }
+    .history-list { display:flex; flex-direction:column; gap:10px; max-height:360px; overflow:auto; padding-right:2px; }
+    .history-item { padding:13px 14px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.56); }
+    .history-item h4 { margin:0 0 8px; font-size:14px; }
+    .history-meta { color:var(--muted); font-size:12px; margin-bottom:8px; }
+    .history-review { color:var(--ink); font-size:12px; line-height:1.55; white-space:pre-wrap; }
+    .history-empty { color:var(--muted); font-size:13px; line-height:1.6; padding:8px 2px; }
     .layout { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(280px,.8fr); gap:22px; }
     .panel { background:var(--card); border:1px solid rgba(255,255,255,.8); border-radius:26px; box-shadow:var(--shadow); backdrop-filter:blur(16px); }
     .schedule { padding:28px; }
@@ -100,7 +110,7 @@
     .tomorrow-head { display:flex; justify-content:space-between; align-items:flex-end; gap:18px; margin-bottom:16px; }
     .tomorrow-head h2 { margin:0 0 5px; font-size:18px; }
     .tomorrow-head p { margin:0; color:var(--muted); font-size:12px; }
-    .tomorrow-form { display:grid; grid-template-columns:110px minmax(0,1fr) minmax(0,1fr) 110px auto; gap:9px; margin-bottom:14px; }
+    .tomorrow-form { display:grid; grid-template-columns:110px minmax(0,1fr) minmax(0,1fr) 100px 110px auto; gap:9px; margin-bottom:14px; }
     .tomorrow-list { display:flex; flex-direction:column; gap:9px; }
     .tomorrow-item { display:grid; grid-template-columns:62px minmax(0,1fr) auto; gap:12px; align-items:center; padding:13px 14px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.56); }
     .tomorrow-time { color:var(--green); font-weight:800; font-size:13px; font-variant-numeric:tabular-nums; }
@@ -121,6 +131,10 @@
     .tag { font-size:11px; border-radius:999px; padding:6px 9px; background:#eef0eb; color:#6c776f; white-space:nowrap; }
     .tag.focus { background:var(--lime); color:#34401d; }
     .tag.meeting { background:#f7ded4; color:#8e4731; }
+    .priority-tag { font-size:11px; border-radius:999px; padding:6px 9px; background:#eef0eb; color:#6c776f; white-space:nowrap; }
+    .priority-high { background:#ffd9cc; color:#8e4731; }
+    .priority-normal { background:#e7edcf; color:#47603f; }
+    .priority-low { background:#edf0ee; color:#728077; }
     .delete { width:28px; height:28px; border:0; border-radius:50%; background:transparent; color:#9aa39d; cursor:pointer; font-size:17px; line-height:1; transition:.2s; }
     .delete:hover { color:#a53e2c; background:#f7ded4; transform:rotate(6deg); }
     .side { display:flex; flex-direction:column; gap:22px; }
@@ -159,6 +173,13 @@
     .weekly-focus h3 { margin:0 0 5px; font-size:15px; }
     .weekly-focus p { margin:0 0 12px; color:#728077; font-size:11px; }
     .weekly-focus textarea { height:116px; }
+    .review-panel { margin-top:22px; padding:28px; }
+    .review-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-top:14px; }
+    .review-card { padding:15px; border:1px solid var(--line); border-radius:18px; background:rgba(255,255,255,.58); }
+    .review-card label { margin:0 0 8px; font-weight:800; color:var(--ink); }
+    .review-card textarea { width:100%; height:104px; resize:none; border:0; outline:0; background:transparent; color:var(--ink); font:13px/1.6 "PingFang SC","Microsoft YaHei",sans-serif; }
+    .review-card textarea::placeholder { color:#a3aaa5; }
+    .review-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:14px; }
     .notes-panel { margin-top:22px; padding:28px; }
     .notes-head { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:22px; }
     .notes-head h2 { margin:0 0 5px; font-size:18px; }
@@ -310,6 +331,7 @@
         font-size:13px;
       }
       body[data-view="home"] .layout,
+      body[data-view="home"] .review-panel,
       body[data-view="home"] .tomorrow-panel,
       body[data-view="home"] .weekly-panel,
       body[data-view="home"] .notes-panel,
@@ -321,27 +343,32 @@
       body[data-view="today"] .profile-panel,
       body[data-view="tomorrow"] .home-panel,
       body[data-view="tomorrow"] .layout,
+      body[data-view="tomorrow"] .review-panel,
       body[data-view="tomorrow"] .weekly-panel,
       body[data-view="tomorrow"] .notes-panel,
       body[data-view="tomorrow"] .profile-panel,
       body[data-view="week"] .home-panel,
       body[data-view="week"] .layout,
+      body[data-view="week"] .review-panel,
       body[data-view="week"] .tomorrow-panel,
       body[data-view="week"] .notes-panel,
       body[data-view="week"] .profile-panel,
       body[data-view="notes"] .home-panel,
       body[data-view="notes"] .layout,
+      body[data-view="notes"] .review-panel,
       body[data-view="notes"] .tomorrow-panel,
       body[data-view="notes"] .weekly-panel,
       body[data-view="notes"] .profile-panel,
       body[data-view="profile"] .home-panel,
       body[data-view="profile"] .layout,
+      body[data-view="profile"] .review-panel,
       body[data-view="profile"] .tomorrow-panel,
       body[data-view="profile"] .weekly-panel,
       body[data-view="profile"] .notes-panel {
         display:none;
       }
       body[data-view="today"] .layout,
+      body[data-view="today"] .review-panel,
       body[data-view="tomorrow"] .tomorrow-panel,
       body[data-view="week"] .weekly-panel,
       body[data-view="notes"] .notes-panel,
@@ -386,6 +413,13 @@
       }
       .profile-actions {
         grid-template-columns:1fr;
+      }
+      .setting-grid,
+      .review-grid {
+        grid-template-columns:1fr;
+      }
+      .review-panel {
+        padding:16px;
       }
       .bottom-nav button.active {
         background:var(--green);
@@ -437,7 +471,7 @@
         gap:8px;
       }
       .task {
-        grid-template-columns:48px 22px minmax(0,1fr) 30px;
+        grid-template-columns:48px 22px minmax(0,1fr) 74px;
         gap:9px;
         align-items:center;
         padding:12px;
@@ -687,6 +721,15 @@
         </section>
       </aside>
     </section>
+    <section class="panel review-panel">
+      <div class="notes-head"><div><h2>今日复盘</h2><p>收个尾：完成了什么、哪里卡住、明天先做什么</p></div><button class="ghost" type="button" id="archiveToday">归档今日</button></div>
+      <div class="review-grid">
+        <div class="review-card"><label for="reviewDone">今天完成了什么</label><textarea id="reviewDone" placeholder="例如：完成方案初稿、同步客户反馈"></textarea></div>
+        <div class="review-card"><label for="reviewBlocked">遇到的问题</label><textarea id="reviewBlocked" placeholder="例如：资料不齐、等待确认、时间被打断"></textarea></div>
+        <div class="review-card"><label for="reviewNext">明天第一件事</label><textarea id="reviewNext" placeholder="例如：上午先处理最关键的交付项"></textarea></div>
+      </div>
+      <div class="review-actions"><button class="add" type="button" id="saveReview">保存复盘</button></div>
+    </section>
     <section class="panel tomorrow-panel">
       <div class="tomorrow-head"><div><h2>明日工作安排</h2><p>提前排好明天，日期变更后会自动转为今日安排</p></div></div>
       <form class="tomorrow-form" id="tomorrowForm">
@@ -694,6 +737,7 @@
         <input id="tomorrowTitle" placeholder="明日任务名称" required>
         <input id="tomorrowNote" placeholder="补充说明，可选">
         <select id="tomorrowType"><option value="常规">常规</option><option value="专注">专注</option><option value="会议">会议</option><option value="休息">休息</option></select>
+        <select id="tomorrowPriority" aria-label="明日任务优先级"><option value="normal">普通</option><option value="high">重要</option><option value="low">低优先级</option></select>
         <button class="add" type="submit">添加到明日</button>
       </form>
       <div class="tomorrow-list" id="tomorrowList"></div>
@@ -715,6 +759,27 @@
         <div class="profile-row"><span>当前账号</span><strong id="profileEmail">未登录</strong></div>
         <div class="profile-row"><span>数据同步</span><strong id="profileSync">等待登录同步</strong></div>
         <div class="profile-row"><span>使用说明</span><strong>今日、明日、本周和便签会跟随账号保存</strong></div>
+        <div class="profile-block">
+          <h3>个人设置</h3>
+          <p>这些设置会跟随账号保存，后面继续升级 APP 时也能沿用。</p>
+          <div class="setting-grid">
+            <input id="profileName" placeholder="昵称，例如：阿邦">
+            <button class="ghost" type="button" id="saveProfileSettings">保存设置</button>
+          </div>
+          <div class="setting-grid" style="margin-top:10px">
+            <select id="notifySetting" aria-label="提醒偏好"><option value="on">开启网页提醒</option><option value="off">关闭网页提醒</option></select>
+            <button class="ghost" type="button" id="resetPassword">发送重置密码邮件</button>
+          </div>
+          <div class="setting-grid" style="margin-top:10px">
+            <button class="ghost" type="button" id="exportData">导出数据备份</button>
+            <button class="ghost" type="button" id="clearLocalCache">清除本机缓存</button>
+          </div>
+        </div>
+        <div class="profile-block">
+          <h3>历史记录</h3>
+          <p>归档后的每日安排会显示在这里，方便写周报和回头看。</p>
+          <div class="history-list" id="historyList"></div>
+        </div>
         <div class="profile-actions">
           <button class="add" type="button" id="profileOpenAuth">登录 / 注册</button>
           <button class="ghost" type="button" id="profileLogout" hidden>退出登录</button>
@@ -739,6 +804,7 @@
       <label for="taskTitle">任务名称</label><input id="taskTitle" placeholder="例如：整理项目周报" required>
       <label for="taskNote">补充说明</label><input id="taskNote" placeholder="可选">
       <label for="taskType">类型</label><select id="taskType"><option value="常规">常规</option><option value="专注">专注</option><option value="会议">会议</option><option value="休息">休息</option></select>
+      <label for="taskPriority">优先级</label><select id="taskPriority"><option value="normal">普通</option><option value="high">重要</option><option value="low">低优先级</option></select>
       <div class="form-actions"><button type="button" class="ghost" id="cancelDialog">取消</button><button class="add" type="submit">添加到今天</button></div>
     </form>
   </dialog>
@@ -775,6 +841,9 @@
     const notesGrid = document.getElementById('notesGrid');
     const saveStatus = document.getElementById('saveStatus');
     const labels = {专注:'focus',会议:'meeting'};
+    const priorityText = {high:'重要',normal:'普通',low:'低'};
+    const priorityClass = {high:'priority-high',normal:'priority-normal',low:'priority-low'};
+    const priorityRank = {high:0,normal:1,low:2};
     let pipWindow=null;
     const notesKey='daily-plan-notes-v1';
     let notes=JSON.parse(localStorage.getItem(notesKey)||'null')||[{id:Date.now(),text:''}];
@@ -810,11 +879,12 @@
       notesGrid.querySelectorAll('.sticky').forEach(card=>{ const id=Number(card.dataset.id), note=notes.find(n=>n.id===id), area=card.querySelector('textarea'); area.value=note.text; area.addEventListener('input',()=>{ note.text=area.value; saveNotes(); }); card.querySelector('.note-delete').onclick=()=>{ if(confirm('确定删除这张便签吗？')){ notes=notes.filter(n=>n.id!==id); saveNotes(); renderNotes(); } }; });
     }
     function render(){
+      tasks.forEach(t=>{ t.priority=t.priority||'normal'; });
       tasks.sort((a,b)=>a.time.localeCompare(b.time));
       timeline.innerHTML = tasks.map(t=>`<article class="task ${t.done?'done':''}" data-id="${t.id}">
         <time class="time">${t.time}</time><input class="check" type="checkbox" ${t.done?'checked':''} aria-label="完成 ${t.title}">
         <div><h3 class="task-title">${esc(t.title)}</h3><div class="task-note">${esc(t.note || '按计划推进这项工作')}</div></div>
-        <div class="task-actions"><span class="tag ${labels[t.type]||''}">${esc(t.type)}</span><button class="delete" type="button" aria-label="删除 ${esc(t.title)}" title="删除事项">×</button></div></article>`).join('');
+        <div class="task-actions"><span class="priority-tag ${priorityClass[t.priority]||''}">${priorityText[t.priority]||'普通'}</span><span class="tag ${labels[t.type]||''}">${esc(t.type)}</span><button class="delete" type="button" aria-label="删除 ${esc(t.title)}" title="删除事项">×</button></div></article>`).join('');
       const done = tasks.filter(t=>t.done).length, pct = tasks.length ? Math.round(done/tasks.length*100) : 0;
       document.getElementById('percent').textContent = pct+'%';
       document.getElementById('doneCount').textContent = done;
@@ -828,6 +898,7 @@
     }
     function renderTomorrowTasks(){
       focus.tomorrowTasks=Array.isArray(focus.tomorrowTasks)?focus.tomorrowTasks:[];
+      focus.tomorrowTasks.forEach(t=>{ t.priority=t.priority||'normal'; });
       focus.tomorrowTasks.sort((a,b)=>a.time.localeCompare(b.time));
       if(!focus.tomorrowTasks.length){
         tomorrowList.innerHTML='<div class="tomorrow-empty">还没有明日安排。今晚想到的事，可以先放到这里。</div>';
@@ -835,7 +906,7 @@
       }
       tomorrowList.innerHTML=focus.tomorrowTasks.map(t=>`<article class="tomorrow-item" data-id="${t.id}">
         <time class="tomorrow-time">${esc(t.time)}</time>
-        <div><h3 class="tomorrow-title">${esc(t.title)}</h3><div class="tomorrow-note">${esc(t.note || '明天按计划推进')}</div></div>
+        <div><h3 class="tomorrow-title">${esc(t.title)}</h3><div class="tomorrow-note">${esc(t.note || '明天按计划推进')} · ${priorityText[t.priority]||'普通'}</div></div>
         <button class="tomorrow-delete" type="button" aria-label="删除 ${esc(t.title)}" title="删除">×</button>
       </article>`).join('');
       tomorrowList.querySelectorAll('.tomorrow-delete').forEach(btn=>btn.addEventListener('click',e=>{
@@ -855,7 +926,7 @@
     }
     function taskMoment(task){ const [hour,minute]=task.time.split(':').map(Number), moment=new Date(); moment.setHours(hour,minute,0,0); return moment; }
     function nextTask(){
-      const pending=tasks.filter(t=>!t.done).sort((a,b)=>a.time.localeCompare(b.time));
+      const pending=tasks.filter(t=>!t.done).sort((a,b)=>(priorityRank[a.priority||'normal']-priorityRank[b.priority||'normal']) || a.time.localeCompare(b.time));
       return pending.find(t=>taskMoment(t)>=new Date()) || pending[0] || null;
     }
     function countdown(task){
@@ -941,6 +1012,7 @@
       updatePip();
     }
     function checkDueNotifications(){
+      if(focus.settings?.notifications==='off') return;
       const now=new Date(), today=`${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`, sentKey='daily-plan-notified-v1', sent=JSON.parse(localStorage.getItem(sentKey)||'[]');
       tasks.filter(t=>!t.done).forEach(t=>{ const due=taskMoment(t), id=`${today}-${t.id}`; if(Math.abs(now-due)<60000 && !sent.includes(id)){ if('Notification' in window && Notification.permission==='granted') new Notification('日程提醒',{body:`${t.time} · ${t.title}`}); sent.push(id); } });
       localStorage.setItem(sentKey,JSON.stringify(sent.slice(-100)));
@@ -966,19 +1038,76 @@
       anniversaryForm.reset();
     };
     const localDateKey=date=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-    const focusKey='daily-plan-focus-v1', focusDefault={title:'完成核心方案，并交付可评审版本',note:'上午保持专注，先推进最需要深度思考的部分。',weeklyCalendar:{},weeklyPriorities:'',anniversaries:[],tomorrowTasks:[],planDate:''};
+    const focusKey='daily-plan-focus-v1', focusDefault={title:'完成核心方案，并交付可评审版本',note:'上午保持专注，先推进最需要深度思考的部分。',weeklyCalendar:{},weeklyPriorities:'',anniversaries:[],tomorrowTasks:[],planDate:'',dailyReviews:{},history:[],settings:{name:'',notifications:'on'}};
     let focus={...focusDefault,...(JSON.parse(localStorage.getItem(focusKey)||'null')||{})};
     focus.weeklyCalendar=focus.weeklyCalendar||{};
     focus.weeklyPriorities=focus.weeklyPriorities||'';
     focus.anniversaries=Array.isArray(focus.anniversaries)?focus.anniversaries:[];
     focus.tomorrowTasks=Array.isArray(focus.tomorrowTasks)?focus.tomorrowTasks:[];
+    focus.dailyReviews=focus.dailyReviews||{};
+    focus.history=Array.isArray(focus.history)?focus.history:[];
+    focus.settings={...focusDefault.settings,...(focus.settings||{})};
+    function currentReview(){
+      const todayKey=localDateKey(new Date());
+      focus.dailyReviews[todayKey]=focus.dailyReviews[todayKey]||{done:'',blocked:'',next:''};
+      return focus.dailyReviews[todayKey];
+    }
+    function reviewText(review){
+      return [review?.done,review?.blocked,review?.next].filter(Boolean).join('\n');
+    }
+    function archiveDay(dateKeyToArchive=localDateKey(new Date()), options={}){
+      focus.history=Array.isArray(focus.history)?focus.history:[];
+      const review=focus.dailyReviews?.[dateKeyToArchive]||{};
+      if(!tasks.length && !reviewText(review) && !options.force) return false;
+      const record={
+        date:dateKeyToArchive,
+        archivedAt:new Date().toISOString(),
+        tasks:tasks.map(t=>({...t,priority:t.priority||'normal'})),
+        review:{done:review.done||'',blocked:review.blocked||'',next:review.next||''}
+      };
+      focus.history=focus.history.filter(item=>item.date!==dateKeyToArchive);
+      focus.history.unshift(record);
+      focus.history=focus.history.slice(0,60);
+      return true;
+    }
+    function renderReview(){
+      const review=currentReview();
+      reviewDone.value=review.done||'';
+      reviewBlocked.value=review.blocked||'';
+      reviewNext.value=review.next||'';
+    }
+    function saveDailyReview(){
+      const review=currentReview();
+      review.done=reviewDone.value.trim();
+      review.blocked=reviewBlocked.value.trim();
+      review.next=reviewNext.value.trim();
+      saveFocus();
+      renderHistory();
+    }
+    function renderHistory(){
+      focus.history=Array.isArray(focus.history)?focus.history:[];
+      if(!focus.history.length){
+        historyList.innerHTML='<div class="history-empty">还没有归档记录。每天结束时点“归档今日”，这里就会慢慢变成你的工作轨迹。</div>';
+        return;
+      }
+      historyList.innerHTML=focus.history.map(item=>{
+        const doneCount=(item.tasks||[]).filter(t=>t.done).length, total=(item.tasks||[]).length;
+        const review=reviewText(item.review)||'这天还没有填写复盘。';
+        return `<article class="history-item"><h4>${esc(item.date)}</h4><div class="history-meta">${doneCount}/${total} 项完成 · ${item.archivedAt?new Date(item.archivedAt).toLocaleString('zh-CN'):''}</div><div class="history-review">${esc(review)}</div></article>`;
+      }).join('');
+    }
+    function updateSettingsUI(){
+      profileName.value=focus.settings?.name||'';
+      notifySetting.value=focus.settings?.notifications||'on';
+    }
     function applyDailyRollover(){
       const todayKey=localDateKey(new Date());
       if(!focus.planDate){ focus.planDate=todayKey; return false; }
       if(focus.planDate===todayKey) return false;
+      archiveDay(focus.planDate);
       const tomorrowTasks=Array.isArray(focus.tomorrowTasks)?focus.tomorrowTasks:[];
       if(tomorrowTasks.length){
-        tasks=tomorrowTasks.map((task,index)=>({...task,id:Date.now()+index,done:false}));
+        tasks=tomorrowTasks.map((task,index)=>({...task,id:Date.now()+index,done:false,priority:task.priority||'normal'}));
         localStorage.setItem(key,JSON.stringify(tasks));
       }
       focus.tomorrowTasks=[];
@@ -990,11 +1119,12 @@
     tomorrowForm.onsubmit=e=>{
       e.preventDefault();
       focus.tomorrowTasks=Array.isArray(focus.tomorrowTasks)?focus.tomorrowTasks:[];
-      focus.tomorrowTasks.push({id:Date.now(),time:tomorrowTime.value,title:tomorrowTitle.value.trim(),note:tomorrowNote.value.trim(),type:tomorrowType.value,done:false});
+      focus.tomorrowTasks.push({id:Date.now(),time:tomorrowTime.value,title:tomorrowTitle.value.trim(),note:tomorrowNote.value.trim(),type:tomorrowType.value,priority:tomorrowPriority.value,done:false});
       saveFocus();
       renderTomorrowTasks();
       tomorrowForm.reset();
       tomorrowTime.value='09:00';
+      tomorrowPriority.value='normal';
     };
     focusTitle.textContent=focus.title; focusNote.textContent=focus.note;
     [focusTitle,focusNote].forEach(el=>el.addEventListener('blur',()=>{ focus={...focus,title:focusTitle.textContent.trim()||focusDefault.title,note:focusNote.textContent.trim()||focusDefault.note}; focusTitle.textContent=focus.title; focusNote.textContent=focus.note; updateHome(); saveFocus(); }));
@@ -1012,10 +1142,16 @@
     renderWeekly();
     renderAnniversaries();
     renderTomorrowTasks();
+    renderReview();
+    renderHistory();
+    updateSettingsUI();
     const dialog=document.getElementById('taskDialog');
     document.getElementById('openDialog').onclick=()=>dialog.showModal();
     document.getElementById('cancelDialog').onclick=()=>dialog.close();
-    document.getElementById('taskForm').onsubmit=e=>{e.preventDefault(); tasks.push({id:Date.now(),time:taskTime.value,title:taskTitle.value.trim(),note:taskNote.value.trim(),type:taskType.value,done:false}); save(); render(); e.target.reset(); dialog.close();};
+    document.getElementById('taskForm').onsubmit=e=>{e.preventDefault(); tasks.push({id:Date.now(),time:taskTime.value,title:taskTitle.value.trim(),note:taskNote.value.trim(),type:taskType.value,priority:taskPriority.value,done:false}); save(); render(); e.target.reset(); taskTime.value='14:00'; taskPriority.value='normal'; dialog.close();};
+    saveReview.onclick=()=>{ saveDailyReview(); alert('今日复盘已保存'); };
+    [reviewDone,reviewBlocked,reviewNext].forEach(el=>el.addEventListener('blur',saveDailyReview));
+    archiveToday.onclick=()=>{ saveDailyReview(); if(archiveDay(localDateKey(new Date()),{force:true})){ saveFocus(); renderHistory(); alert('今日已归档到历史记录'); } };
     const authDialog=document.getElementById('authDialog'), authForm=document.getElementById('authForm'), authMessage=document.getElementById('authMessage');
     const profileEmail=document.getElementById('profileEmail'), profileSync=document.getElementById('profileSync'), profileOpenAuth=document.getElementById('profileOpenAuth'), profileLogout=document.getElementById('profileLogout');
     function setAuthMessage(text,ok=false){ authMessage.textContent=text; authMessage.classList.toggle('ok',ok); }
@@ -1041,9 +1177,12 @@
         focus.weeklyCalendar=focus.weeklyCalendar||{}; focus.weeklyPriorities=focus.weeklyPriorities||'';
         focus.anniversaries=Array.isArray(focus.anniversaries)?focus.anniversaries:[];
         focus.tomorrowTasks=Array.isArray(focus.tomorrowTasks)?focus.tomorrowTasks:[];
+        focus.dailyReviews=focus.dailyReviews||{};
+        focus.history=Array.isArray(focus.history)?focus.history:[];
+        focus.settings={...focusDefault.settings,...(focus.settings||{})};
         const rolled=applyDailyRollover();
         localStorage.setItem(key,JSON.stringify(tasks)); localStorage.setItem(notesKey,JSON.stringify(notes)); localStorage.setItem(focusKey,JSON.stringify(focus));
-        focusTitle.textContent=focus.title; focusNote.textContent=focus.note; render(); renderNotes(); renderWeekly(); renderAnniversaries(); renderTomorrowTasks();
+        focusTitle.textContent=focus.title; focusNote.textContent=focus.note; render(); renderNotes(); renderWeekly(); renderAnniversaries(); renderTomorrowTasks(); renderReview(); renderHistory(); updateSettingsUI();
         hydrating=false;
         if(rolled) await saveToCloud();
       } else await saveToCloud();
@@ -1062,6 +1201,26 @@
     }
     openAuth.onclick=()=>{ setAuthMessage(''); authDialog.showModal(); };
     profileOpenAuth.onclick=()=>{ setAuthMessage(''); authDialog.showModal(); };
+    saveProfileSettings.onclick=()=>{ focus.settings={...focus.settings,name:profileName.value.trim(),notifications:notifySetting.value}; saveFocus(); alert('设置已保存'); };
+    notifySetting.onchange=()=>{ focus.settings={...focus.settings,notifications:notifySetting.value}; saveFocus(); };
+    resetPassword.onclick=async()=>{
+      const email=currentUser?.email || authEmail.value.trim();
+      if(!email){ alert('请先登录，或在登录框里填写邮箱'); return; }
+      const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+      alert(error ? `发送失败：${error.message}` : `已发送重置密码邮件到：${email}`);
+    };
+    exportData.onclick=()=>{
+      const backup={exportedAt:new Date().toISOString(),tasks,notes,focus};
+      const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob), a=document.createElement('a');
+      a.href=url; a.download=`daily-plan-backup-${localDateKey(new Date())}.json`; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),800);
+    };
+    clearLocalCache.onclick=()=>{
+      if(!confirm('只清除这台设备的本机缓存，不会删除云端账号数据。确定继续吗？')) return;
+      [key,notesKey,focusKey,'daily-plan-notified-v1'].forEach(item=>localStorage.removeItem(item));
+      alert('本机缓存已清除。重新打开后会从云端读取数据。');
+    };
     authDialog.addEventListener('cancel',e=>{ if(!currentUser) e.preventDefault(); });
     lockWorkspace();
     authForm.onsubmit=e=>{ e.preventDefault(); submitAuth('login'); };
