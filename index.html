@@ -84,6 +84,8 @@
     .profile-row strong { color:var(--ink); text-align:right; word-break:break-all; }
     .profile-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
     .profile-actions button { width:100%; }
+    .version-link { color:var(--green); text-decoration:none; font-weight:800; }
+    .version-link:hover { text-decoration:underline; }
     .profile-block { margin-top:18px; padding-top:18px; border-top:1px solid var(--line); }
     details.profile-block summary { list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:14px; }
     details.profile-block summary::-webkit-details-marker { display:none; }
@@ -199,6 +201,10 @@
     .mini-btn { border:1px solid var(--line); background:rgba(255,255,255,.7); border-radius:999px; padding:7px 10px; color:var(--green); cursor:pointer; font-size:12px; font-weight:800; }
     .mini-btn.danger { color:#a53e2c; }
     .search-empty { color:var(--muted); font-size:13px; line-height:1.6; padding:8px 2px; }
+    .changelog-list { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+    .changelog-item { padding:12px 13px; border:1px solid var(--line); border-radius:15px; background:rgba(255,255,255,.56); }
+    .changelog-item h4 { margin:0 0 6px; font-size:14px; }
+    .changelog-item ul { margin:8px 0 0; padding-left:18px; color:var(--muted); font-size:12px; line-height:1.7; }
     .notes-panel { margin-top:22px; padding:28px; }
     .notes-head { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:22px; }
     .notes-head h2 { margin:0 0 5px; font-size:18px; }
@@ -789,7 +795,31 @@
       <div class="profile-card">
         <div class="profile-row"><span>当前账号</span><strong id="profileEmail">未登录</strong></div>
         <div class="profile-row"><span>数据同步</span><strong id="profileSync">等待登录同步</strong></div>
+        <div class="profile-row"><span>当前版本</span><strong>APP v1.0.3 / Web 2026.06.24</strong></div>
         <div class="profile-row"><span>使用说明</span><strong>今日、明日、本周和便签会跟随账号保存</strong></div>
+        <details class="profile-block" open>
+          <summary><div><h3>版本信息与更新内容</h3><p>查看当前安装包版本、补丁内容和下载入口。</p></div></summary>
+          <div class="profile-row"><span>最新安装包</span><strong><a class="version-link" href="https://github.com/sm1842148463-byte/daily-plan/releases/download/v1.0.3/daily-plan-v1.0.3.apk" target="_blank" rel="noopener">下载 v1.0.3</a></strong></div>
+          <div class="changelog-list">
+            <article class="changelog-item">
+              <h4>v1.0.3 · 手机端界面与原生提醒增强</h4>
+              <ul>
+                <li>“我的”页重复任务、搜索、历史记录改为折叠卡片。</li>
+                <li>增强 Android 原生通知：任务到点提醒、早上查看今日、晚上填写复盘。</li>
+                <li>提醒开关会同时影响网页提醒和 APP 原生提醒。</li>
+                <li>安装包已发布为公开下载链接，便于后续分发。</li>
+              </ul>
+            </article>
+            <article class="changelog-item">
+              <h4>v1.0.2 · 工作闭环功能</h4>
+              <ul>
+                <li>新增任务优先级、今日复盘、历史记录、周报草稿。</li>
+                <li>新增未完成顺延、重复任务、全局搜索。</li>
+                <li>新增“明日”独立页面和“我的”页面。</li>
+              </ul>
+            </article>
+          </div>
+        </details>
         <div class="profile-block">
           <h3>个人设置</h3>
           <p>这些设置会跟随账号保存，后面继续升级 APP 时也能沿用。</p>
