@@ -14,4 +14,9 @@ public class ReminderBridge {
     public void syncTasks(String tasksJson) {
         ReminderScheduler.syncTasks(context, tasksJson);
     }
+
+    @JavascriptInterface
+    public String getAppVersion() {
+        return BuildConfig.VERSION_NAME;
+    }
 }

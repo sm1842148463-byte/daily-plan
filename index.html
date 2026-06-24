@@ -86,6 +86,10 @@
     .profile-actions button { width:100%; }
     .version-link { color:var(--green); text-decoration:none; font-weight:800; }
     .version-link:hover { text-decoration:underline; }
+    .update-button { position:relative; display:inline-flex; align-items:center; gap:7px; justify-content:center; }
+    .update-dot { display:none; width:8px; height:8px; border-radius:50%; background:#e23d2b; box-shadow:0 0 0 4px rgba(226,61,43,.12); }
+    .update-button.has-update .update-dot { display:inline-block; }
+    .update-status { margin-top:8px; color:var(--muted); font-size:12px; line-height:1.5; }
     .profile-block { margin-top:18px; padding-top:18px; border-top:1px solid var(--line); }
     details.profile-block summary { list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:14px; }
     details.profile-block summary::-webkit-details-marker { display:none; }
@@ -795,12 +799,22 @@
       <div class="profile-card">
         <div class="profile-row"><span>当前账号</span><strong id="profileEmail">未登录</strong></div>
         <div class="profile-row"><span>数据同步</span><strong id="profileSync">等待登录同步</strong></div>
-        <div class="profile-row"><span>当前版本</span><strong>APP v1.0.4 / Web 2026.06.24</strong></div>
+        <div class="profile-row"><span>当前版本</span><strong id="currentVersionText">APP v1.0.5 / Web 2026.06.24</strong></div>
         <div class="profile-row"><span>使用说明</span><strong>今日、明日、本周和便签会跟随账号保存</strong></div>
         <details class="profile-block" open>
           <summary><div><h3>版本信息与更新内容</h3><p>查看当前安装包版本、补丁内容和下载入口。</p></div></summary>
-          <div class="profile-row"><span>最新安装包</span><strong><a class="version-link" href="https://github.com/sm1842148463-byte/daily-plan/releases/download/v1.0.4/daily-plan-v1.0.4.apk" target="_blank" rel="noopener">下载 v1.0.4</a></strong></div>
+          <div class="profile-row"><span>最新安装包</span><strong><a class="version-link" id="latestApkLink" href="https://github.com/sm1842148463-byte/daily-plan/releases/download/v1.0.5/daily-plan-v1.0.5.apk" target="_blank" rel="noopener">下载 v1.0.5</a></strong></div>
+          <button class="add update-button" type="button" id="checkUpdate"><span class="update-dot" aria-hidden="true"></span><span id="checkUpdateText">检查更新</span></button>
+          <div class="update-status" id="updateStatus">打开“我的”页后会自动检查是否有新版本。</div>
           <div class="changelog-list">
+            <article class="changelog-item">
+              <h4>v1.0.5 · APP 内版本更新提示</h4>
+              <ul>
+                <li>新增“检查更新”按钮，有新版本时显示红点。</li>
+                <li>APP 会读取当前安装版本，并和最新安装包版本比较。</li>
+                <li>点击更新按钮可直接打开最新 APK 下载链接。</li>
+              </ul>
+            </article>
             <article class="changelog-item">
               <h4>v1.0.4 · 提醒设置可自定义</h4>
               <ul>
@@ -920,6 +934,14 @@
     const SUPABASE_URL='https://jeywkltcbcuckecgbqto.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY='sb_publishable_UH9dUtNMWylU4VPXeuy0lg_aQQ5NVY4';
     const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+    const WEB_VERSION='2026.06.24';
+    const FALLBACK_APP_VERSION='1.0.5';
+    const RELEASE_API='https://api.github.com/repos/sm1842148463-byte/daily-plan/releases/latest';
+    function compareVersion(a,b){
+      const pa=String(a||'0').replace(/^v/,'').split('.').map(Number), pb=String(b||'0').replace(/^v/,'').split('.').map(Number);
+      for(let i=0;i<Math.max(pa.length,pb.length);i++){ const diff=(pa[i]||0)-(pb[i]||0); if(diff) return diff; }
+      return 0;
+    }
     const seed = [
       {time:'09:00', title:'梳理今日重点', note:'查看消息与待办，确定今天的三个关键产出', type:'常规'},
       {time:'09:30', title:'核心方案深度工作', note:'关闭通知，集中完成方案主体与关键细节', type:'专注'},
@@ -1017,6 +1039,43 @@
     function syncNativeReminders(){
       if(window.AndroidReminder && typeof window.AndroidReminder.syncTasks==='function'){
         try{ window.AndroidReminder.syncTasks(JSON.stringify({tasks,settings:focus.settings||{},notifications:focus.settings?.notifications!=='off'})); }catch(error){ console.warn('原生提醒同步失败',error); }
+      }
+    }
+    function installedAppVersion(){
+      if(window.AndroidReminder && typeof window.AndroidReminder.getAppVersion==='function'){
+        try{ return window.AndroidReminder.getAppVersion() || FALLBACK_APP_VERSION; }catch(error){ return FALLBACK_APP_VERSION; }
+      }
+      const appVersionParam=new URLSearchParams(location.search).get('appVersion')||'';
+      const match=appVersionParam.match(/(\d+\.\d+\.\d+)/);
+      if(match) return match[1];
+      return FALLBACK_APP_VERSION;
+    }
+    async function checkForUpdates(manual=false){
+      const current=installedAppVersion();
+      currentVersionText.textContent=`APP v${current} / Web ${WEB_VERSION}`;
+      checkUpdate.disabled=true;
+      updateStatus.textContent='正在检查最新版本…';
+      try{
+        const response=await fetch(RELEASE_API,{headers:{Accept:'application/vnd.github+json'}});
+        if(!response.ok) throw new Error('无法读取最新版本');
+        const release=await response.json();
+        const latest=String(release.tag_name||'v0').replace(/^v/,'');
+        const asset=(release.assets||[]).find(item=>/\.apk$/i.test(item.name));
+        const url=asset?.browser_download_url || release.html_url;
+        latestApkLink.href=url;
+        latestApkLink.textContent=`下载 v${latest}`;
+        const hasUpdate=compareVersion(latest,current)>0;
+        checkUpdate.classList.toggle('has-update',hasUpdate);
+        checkUpdateText.textContent=hasUpdate ? `发现新版 v${latest}` : '已是最新版本';
+        updateStatus.textContent=hasUpdate ? `当前安装 v${current}，最新 v${latest}。点击按钮即可下载更新。` : `当前安装 v${current}，已经是最新版本。`;
+        checkUpdate.onclick=()=>{ window.open(url,'_blank','noopener'); };
+      }catch(error){
+        updateStatus.textContent=manual ? '检查失败，请稍后再试，或使用上方安装包链接。' : '暂时无法自动检查更新，可手动点击上方安装包链接。';
+        checkUpdate.classList.remove('has-update');
+        checkUpdateText.textContent='检查更新';
+        checkUpdate.onclick=()=>checkForUpdates(true);
+      }finally{
+        checkUpdate.disabled=false;
       }
     }
     function taskMoment(task){ const [hour,minute]=task.time.split(':').map(Number), moment=new Date(); moment.setHours(hour,minute,0,0); return moment; }
@@ -1456,6 +1515,7 @@
     checkDueNotifications();
     render();
     renderNotes();
+    checkForUpdates();
   </script>
 </body>
 </html>

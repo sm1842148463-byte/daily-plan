@@ -1,4 +1,4 @@
-name: Build Android APK
+﻿name: Build Android APK
 
 on:
   workflow_dispatch:
@@ -55,13 +55,13 @@ jobs:
       - name: Package release files
         shell: bash
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk release-output/daily-plan-v1.0.4.apk
-          sha256sum release-output/daily-plan-v1.0.4.apk > release-output/SHA256.txt
+          cp android/app/build/outputs/apk/release/app-release.apk release-output/daily-plan-v1.0.5.apk
+          sha256sum release-output/daily-plan-v1.0.5.apk > release-output/SHA256.txt
 
       - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: daily-plan-release-v1.0.4
+          name: daily-plan-release-v1.0.5
           path: release-output/*
           if-no-files-found: error
 
@@ -70,10 +70,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v1.0.4 >/dev/null 2>&1; then
-            gh release upload v1.0.4 release-output/daily-plan-v1.0.4.apk release-output/SHA256.txt --clobber
+          if gh release view v1.0.5 >/dev/null 2>&1; then
+            gh release upload v1.0.5 release-output/daily-plan-v1.0.5.apk release-output/SHA256.txt --clobber
           else
-            gh release create v1.0.4 release-output/daily-plan-v1.0.4.apk release-output/SHA256.txt \
-              --title "今日工作安排 v1.0.4" \
-              --notes "早上查看今日、晚上填写复盘提醒改为可选，并支持自定义提醒时间。"
+            gh release create v1.0.5 release-output/daily-plan-v1.0.5.apk release-output/SHA256.txt \
+              --title "今日工作安排 v1.0.5" \
+              --notes "新增 APP 内版本更新检测按钮，有新版本时显示红点并直达 APK 下载。"
           fi
